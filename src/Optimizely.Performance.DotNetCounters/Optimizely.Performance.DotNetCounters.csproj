@@ -1,0 +1,129 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Authors>Optimizely</Authors>
+    <Company>Optimizely</Company>
+    <Product>Optimizely Performance Counters</Product>
+    <Description>Performance counters integration for Optimizely CMS V11, V12, and V13 supporting both .NET Framework and .NET Core+. Includes configuration templates for all scenarios.</Description>
+    <PackageProjectUrl>https://github.com/optimizely</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <NoWarn>$(NoWarn);NU1603;NU1605</NoWarn>
+    <Version>1.0.0</Version>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageTags>optimizely;episerver;performance;counters;monitoring;application-insights;telemetry</PackageTags>
+    <RepositoryUrl>https://github.com/optimizely/performance-counters</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeContentInPack>true</IncludeContentInPack>
+    <ContentTargetFolders>content;contentFiles</ContentTargetFolders>
+  </PropertyGroup>
+
+  <!-- Include README and key documentation in package -->
+  <ItemGroup>
+    <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\..\docs\QUICK_REFERENCE.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\..\docs\USAGE_GUIDE.md" Pack="true" PackagePath="docs\" />
+  </ItemGroup>
+
+  <!-- Content files - Configuration templates for .NET Framework (V11) -->
+  <ItemGroup>
+    <!-- Main config file - goes to project root -->
+    <Content Include="..\..\..\examples\V11\Optimizely.PerformanceCounters.config">
+      <Pack>true</Pack>
+      <PackagePath>content\;contentFiles\any\any\</PackagePath>
+      <BuildAction>None</BuildAction>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+
+    <!-- Documentation/reference files - go to App_Data -->
+    <Content Include="..\..\..\examples\V11\*.config" Exclude="..\..\..\examples\V11\Optimizely.PerformanceCounters.config">
+      <Pack>true</Pack>
+      <PackagePath>content\App_Data\Optimizely.PerformanceCounters\V11\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V11\</PackagePath>
+      <BuildAction>None</BuildAction>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+
+    <!-- XML snippet for web.config setup -->
+    <Content Include="..\..\..\examples\V11\web.config.snippet.xml">
+      <Pack>true</Pack>
+      <PackagePath>content\App_Data\Optimizely.PerformanceCounters\V11\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V11\</PackagePath>
+      <BuildAction>None</BuildAction>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Content files - Configuration templates for .NET 6+ (V12/V13) -->
+  <ItemGroup>
+    <Content Include="..\..\..\examples\V12-V13\*.json">
+      <Pack>true</Pack>
+      <PackagePath>contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V12-V13\;content\App_Data\Optimizely.PerformanceCounters\V12-V13\</PackagePath>
+      <BuildAction>None</BuildAction>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Include configuration guide and README -->
+  <ItemGroup>
+    <None Include="..\..\..\docs\CONFIGURATION_PRESETS_GUIDE.md">
+      <Pack>true</Pack>
+      <PackagePath>content\App_Data\Optimizely.PerformanceCounters\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\</PackagePath>
+    </None>
+    <None Include="..\..\..\examples\README_AFTER_INSTALL.md">
+      <Pack>true</Pack>
+      <PackagePath>content\App_Data\Optimizely.PerformanceCounters\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <!-- Include build targets and install script -->
+  <ItemGroup>
+    <None Include="..\..\..\build\Optimizely.Performance.DotNetCounters.targets">
+      <Pack>true</Pack>
+      <PackagePath>build\</PackagePath>
+    </None>
+    <None Include="..\..\..\build\install.ps1">
+      <Pack>true</Pack>
+      <PackagePath>tools\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <!-- Define Optimizely version constants -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);OPTI_V11;OPTI_V12;OPTI_V13</DefineConstants>
+  </PropertyGroup>
+
+  <!-- .NET Framework 4.7.2 specific (V11) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
+    <PackageReference Include="EPiServer.CMS.Core" Version="11.*" PrivateAssets="compile" />
+    <PackageReference Include="EPiServer.Framework" Version="11.*" PrivateAssets="compile" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.PerfCounterCollector" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <!-- .NET 6 packages (V12) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="EPiServer.CMS.Core" Version="12.*" PrivateAssets="compile" />
+    <PackageReference Include="EPiServer.Framework" Version="12.*" PrivateAssets="compile" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
+  </ItemGroup>
+
+  <!-- .NET 8+ packages (V13) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="EPiServer.Cms.Core" Version="13.*" PrivateAssets="compile" />
+    <PackageReference Include="EPiServer.Framework" Version="13.*" PrivateAssets="compile" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

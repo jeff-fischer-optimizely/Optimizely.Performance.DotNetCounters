@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <configSections>
+    <sectionGroup name="optimizely">
+      <section name="performanceCounters"
+               type="Optimizely.Performance.DotNetCounters.Services.PerformanceCountersConfigSection, Optimizely.Performance.DotNetCounters" />
+    </sectionGroup>
+  </configSections>
+
+  <!--
+    Performance Counters Configuration for .NET Framework 4.7.2 / Optimizely V11
+
+    This section configures Windows Performance Counters to be collected and sent to Application Insights.
+
+    To use the default counters, simply set enabled="true" and leave the counters collection empty.
+    To customize, add specific counters as shown below.
+  -->
+  <optimizely>
+    <performanceCounters enabled="true">
+      <counters>
+        <!-- ASP.NET Counters -->
+        <add categoryName="\ASP.NET\Requests Queued"
+             reportedName="ASP.NET Requests Queued" />
+        <add categoryName="\ASP.NET Applications(__Total__)\Requests/Sec"
+             reportedName="ASP.NET Requests/Sec" />
+        <add categoryName="\ASP.NET Applications(__Total__)\Request Wait Time"
+             reportedName="ASP.NET Request Wait Time" />
+        <add categoryName="\ASP.NET Applications(__Total__)\Request Execution Time"
+             reportedName="ASP.NET Request Execution Time" />
+
+        <!-- .NET CLR LocksAndThreads -->
+        <add categoryName=".NET CLR LocksAndThreads(_Global_)\# of current logical Threads"
+             reportedName="CLR Logical Threads" />
+        <add categoryName=".NET CLR LocksAndThreads(_Global_)\# of current physical Threads"
+             reportedName="CLR Physical Threads" />
+        <add categoryName=".NET CLR LocksAndThreads(_Global_)\Contention Rate / sec"
+             reportedName="CLR Contention Rate" />
+        <add categoryName=".NET CLR LocksAndThreads(_Global_)\Current Queue Length"
+             reportedName="CLR Thread Queue Length" />
+
+        <!-- .NET CLR Memory -->
+        <add categoryName=".NET CLR Memory(_Global_)\# Bytes in all Heaps"
+             reportedName="CLR Heap Size" />
+        <add categoryName=".NET CLR Memory(_Global_)\% Time in GC"
+             reportedName="CLR % Time in GC" />
+        <add categoryName=".NET CLR Memory(_Global_)\Gen 0 Collections/sec"
+             reportedName="CLR Gen 0 Collections/sec" />
+        <add categoryName=".NET CLR Memory(_Global_)\Gen 1 Collections/sec"
+             reportedName="CLR Gen 1 Collections/sec" />
+        <add categoryName=".NET CLR Memory(_Global_)\Gen 2 Collections/sec"
+             reportedName="CLR Gen 2 Collections/sec" />
+        <add categoryName=".NET CLR Memory(_Global_)\Large Object Heap size"
+             reportedName="CLR LOH Size" />
+
+        <!-- Process Counters -->
+        <add categoryName="\Process(??APP_WIN32_PROC??)\Thread Count"
+             reportedName="Process Thread Count" />
+        <add categoryName="\Process(??APP_WIN32_PROC??)\Handle Count"
+             reportedName="Process Handle Count" />
+      </counters>
+    </performanceCounters>
+  </optimizely>
+
+  <!-- Application Insights Configuration -->
+  <applicationInsights>
+    <InstrumentationKey>YOUR-INSTRUMENTATION-KEY-HERE</InstrumentationKey>
+  </applicationInsights>
+
+</configuration>

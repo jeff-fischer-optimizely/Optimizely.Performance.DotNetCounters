@@ -1,0 +1,124 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+
+  // Application Insights configuration
+  "ApplicationInsights": {
+    "InstrumentationKey": "YOUR-INSTRUMENTATION-KEY-HERE",
+    "ConnectionString": "InstrumentationKey=YOUR-INSTRUMENTATION-KEY-HERE"
+  },
+
+  // Optimizely Performance Counters Configuration for .NET 6+ / Optimizely V12 & V13
+  //
+  // This section configures Event Counters to be collected and sent to Application Insights.
+  //
+  // To use the default counters, set "Enabled": true and leave "EventCounters" empty or remove it.
+  // To customize, add specific event counters as shown below.
+  "Optimizely": {
+    "PerformanceCounters": {
+      "Enabled": true,
+      "EventCounters": [
+        // System.Runtime counters - Core .NET metrics
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "cpu-usage"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "working-set"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gc-heap-size"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-0-gc-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-1-gc-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-2-gc-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "time-in-gc"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-0-size"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-1-size"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "gen-2-size"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "loh-size"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "alloc-rate"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "assembly-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "exception-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "threadpool-thread-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "monitor-lock-contention-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "threadpool-queue-length"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "threadpool-completed-items-count"
+        },
+        {
+          "EventSourceName": "System.Runtime",
+          "CounterName": "active-timer-count"
+        },
+
+        // ASP.NET Core Hosting counters
+        {
+          "EventSourceName": "Microsoft.AspNetCore.Hosting",
+          "CounterName": "requests-per-second"
+        },
+        {
+          "EventSourceName": "Microsoft.AspNetCore.Hosting",
+          "CounterName": "total-requests"
+        },
+        {
+          "EventSourceName": "Microsoft.AspNetCore.Hosting",
+          "CounterName": "current-requests"
+        },
+        {
+          "EventSourceName": "Microsoft.AspNetCore.Hosting",
+          "CounterName": "failed-requests"
+        }
+      ]
+    }
+  }
+}

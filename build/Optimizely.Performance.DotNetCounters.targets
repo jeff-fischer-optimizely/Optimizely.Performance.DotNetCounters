@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--
+    MSBuild targets file for Optimizely.Performance.DotNetCounters
+    This file ensures configuration templates are available but not built/deployed
+  -->
+
+  <PropertyGroup>
+    <OptiPerfCountersConfigPath>$(MSBuildThisFileDirectory)..\content\App_Data\Optimizely.PerformanceCounters\</OptiPerfCountersConfigPath>
+  </PropertyGroup>
+
+  <!-- Display message after build -->
+  <Target Name="OptiPerfCountersPostBuildInfo" AfterTargets="Build">
+    <Message Importance="High" Text="========================================" />
+    <Message Importance="High" Text="Optimizely Performance Counters" />
+    <Message Importance="High" Text="========================================" />
+    <Message Importance="High" Text="Configuration templates available at:" />
+    <Message Importance="High" Text="  App_Data\Optimizely.PerformanceCounters\" />
+    <Message Importance="High" Text="" />
+    <Message Importance="High" Text="See README_AFTER_INSTALL.md for setup instructions." />
+    <Message Importance="High" Text="========================================" />
+  </Target>
+
+  <!-- Ensure configuration templates are not deployed to output -->
+  <ItemGroup>
+    <Content Remove="App_Data\Optimizely.PerformanceCounters\**\*.*" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Web.config Setup Snippet for Optimizely V11
+
+  Add these sections to your web.config to enable performance counters.
+  This is a ONE-TIME setup - the actual counter configuration is in
+  Optimizely.PerformanceCounters.config (easier to update).
+-->
+<configuration>
+
+  <!-- Step 1: Add this to <configSections> (near the top of web.config) -->
+  <configSections>
+    <!-- Add this sectionGroup inside <configSections> -->
+    <sectionGroup name="optimizely">
+      <section name="performanceCounters"
+               type="Optimizely.Performance.DotNetCounters.Services.PerformanceCountersConfigSection, Optimizely.Performance.DotNetCounters" />
+    </sectionGroup>
+  </configSections>
+
+  <!-- Step 2: Add this anywhere in <configuration> -->
+  <optimizely>
+    <!-- This single line references the external config file -->
+    <performanceCounters configSource="Optimizely.PerformanceCounters.config" />
+  </optimizely>
+
+  <!-- Step 3: Ensure Application Insights is configured -->
+  <applicationInsights>
+    <InstrumentationKey>YOUR-INSTRUMENTATION-KEY-HERE</InstrumentationKey>
+  </applicationInsights>
+
+</configuration>
+
+<!--
+  NOTES:
+
+  1. The <configSections> must be the FIRST element inside <configuration>
+
+  2. If you already have <configSections>, just add the <sectionGroup> inside it
+
+  3. If you already have an <optimizely> section, add the <performanceCounters>
+     line inside it
+
+  4. The file "Optimizely.PerformanceCounters.config" should be in your project
+     root (same directory as web.config)
+
+  5. To disable counters in development, use web.Development.config transform
+-->
