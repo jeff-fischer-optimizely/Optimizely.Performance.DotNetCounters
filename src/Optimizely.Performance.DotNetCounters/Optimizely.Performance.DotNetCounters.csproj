@@ -24,15 +24,15 @@
 
   <!-- Include README and key documentation in package -->
   <ItemGroup>
-    <None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
-    <None Include="..\..\..\docs\QUICK_REFERENCE.md" Pack="true" PackagePath="docs\" />
-    <None Include="..\..\..\docs\USAGE_GUIDE.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\QUICK_REFERENCE.md" Pack="true" PackagePath="docs\" />
+    <None Include="..\..\docs\USAGE_GUIDE.md" Pack="true" PackagePath="docs\" />
   </ItemGroup>
 
   <!-- Content files - Configuration templates for .NET Framework (V11) -->
   <ItemGroup>
     <!-- Main config file - goes to project root -->
-    <Content Include="..\..\..\examples\V11\Optimizely.PerformanceCounters.config">
+    <Content Include="..\..\examples\V11\Optimizely.PerformanceCounters.config">
       <Pack>true</Pack>
       <PackagePath>content\;contentFiles\any\any\</PackagePath>
       <BuildAction>None</BuildAction>
@@ -40,7 +40,7 @@
     </Content>
 
     <!-- Documentation/reference files - go to App_Data -->
-    <Content Include="..\..\..\examples\V11\*.config" Exclude="..\..\..\examples\V11\Optimizely.PerformanceCounters.config">
+    <Content Include="..\..\examples\V11\*.config" Exclude="..\..\examples\V11\Optimizely.PerformanceCounters.config">
       <Pack>true</Pack>
       <PackagePath>content\App_Data\Optimizely.PerformanceCounters\V11\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V11\</PackagePath>
       <BuildAction>None</BuildAction>
@@ -48,7 +48,7 @@
     </Content>
 
     <!-- XML snippet for web.config setup -->
-    <Content Include="..\..\..\examples\V11\web.config.snippet.xml">
+    <Content Include="..\..\examples\V11\web.config.snippet.xml">
       <Pack>true</Pack>
       <PackagePath>content\App_Data\Optimizely.PerformanceCounters\V11\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V11\</PackagePath>
       <BuildAction>None</BuildAction>
@@ -58,7 +58,7 @@
 
   <!-- Content files - Configuration templates for .NET 6+ (V12/V13) -->
   <ItemGroup>
-    <Content Include="..\..\..\examples\V12-V13\*.json">
+    <Content Include="..\..\examples\V12-V13\*.json">
       <Pack>true</Pack>
       <PackagePath>contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\V12-V13\;content\App_Data\Optimizely.PerformanceCounters\V12-V13\</PackagePath>
       <BuildAction>None</BuildAction>
@@ -68,11 +68,11 @@
 
   <!-- Include configuration guide and README -->
   <ItemGroup>
-    <None Include="..\..\..\docs\CONFIGURATION_PRESETS_GUIDE.md">
+    <None Include="..\..\docs\CONFIGURATION_PRESETS_GUIDE.md">
       <Pack>true</Pack>
       <PackagePath>content\App_Data\Optimizely.PerformanceCounters\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\</PackagePath>
     </None>
-    <None Include="..\..\..\examples\README_AFTER_INSTALL.md">
+    <None Include="..\..\examples\README_AFTER_INSTALL.md">
       <Pack>true</Pack>
       <PackagePath>content\App_Data\Optimizely.PerformanceCounters\;contentFiles\any\any\App_Data\Optimizely.PerformanceCounters\</PackagePath>
     </None>
@@ -80,11 +80,11 @@
 
   <!-- Include build targets and install script -->
   <ItemGroup>
-    <None Include="..\..\..\build\Optimizely.Performance.DotNetCounters.targets">
+    <None Include="..\..\build\Optimizely.Performance.DotNetCounters.targets">
       <Pack>true</Pack>
       <PackagePath>build\</PackagePath>
     </None>
-    <None Include="..\..\..\build\install.ps1">
+    <None Include="..\..\build\install.ps1">
       <Pack>true</Pack>
       <PackagePath>tools\</PackagePath>
     </None>
