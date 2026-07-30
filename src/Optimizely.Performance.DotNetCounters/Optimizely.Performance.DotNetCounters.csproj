@@ -90,9 +90,9 @@
     </None>
   </ItemGroup>
 
-  <!-- Define Optimizely version constants -->
+  <!-- Define product version compilation symbols (use CMS11/CMS12/CMS13 uniformly across repos) -->
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);OPTI_V11;OPTI_V12;OPTI_V13</DefineConstants>
+    <DefineConstants>$(DefineConstants);CMS11;CMS12;CMS13</DefineConstants>
   </PropertyGroup>
 
   <!-- .NET Framework 4.7.2 specific (V11) -->

@@ -85,3 +85,6 @@ _ReSharper*/
 
 # macOS
 .DS_Store
+
+# Testing directory (automated Foundation clones)
+/testing/

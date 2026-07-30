@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        config: [net472, net6.0]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '7.0.x'
+
+      - name: Restore
+        run: dotnet restore Optimizely.Performance.DotNetCounters.sln
+
+      - name: Build net472 (Optimizely V11)
+        if: matrix.config == 'net472'
+        run: |
+          msbuild Optimizely.Performance.DotNetCounters.sln /p:Configuration=Release /p:TargetFramework=net472 /p:DefineConstants="CMS11"
+
+      - name: Build net6.0 (Optimizely V12)
+        if: matrix.config == 'net6.0'
+        run: |
+          dotnet build Optimizely.Performance.DotNetCounters.sln -c Release /p:DefineConstants="CMS12"
+
+      - name: Run unit tests (net6.0)
+        if: matrix.config == 'net6.0'
+        run: |
+          dotnet test -c Release
