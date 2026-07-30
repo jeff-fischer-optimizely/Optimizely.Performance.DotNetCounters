@@ -15,10 +15,9 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 {
     /// <summary>
     /// Initialization module for Optimizely Performance Counters.
-    /// Supports Optimizely V11 (.NET Framework 4.7.2), V12 (.NET 6), and V13 (.NET 8+).
+    /// Supports Optimizely V11 (.NET Framework 4.7.2), V12 (.NET 6), and future versions.
     /// </summary>
     [InitializableModule]
-    [ModuleDependency(typeof(EPiServer.Web.InitializationModule))]
     public class PerformanceCountersInitializationModule : IConfigurableModule
     {
         private bool _initialized;
