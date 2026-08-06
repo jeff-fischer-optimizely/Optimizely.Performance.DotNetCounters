@@ -90,11 +90,6 @@
     </None>
   </ItemGroup>
 
-  <!-- Define product version compilation symbols (use CMS11/CMS12/CMS13 uniformly across repos) -->
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);CMS11;CMS12;CMS13</DefineConstants>
-  </PropertyGroup>
-
   <!-- .NET Framework 4.7.2 specific (V11) -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
     <PackageReference Include="EPiServer.CMS.Core" Version="11.*" PrivateAssets="compile" />

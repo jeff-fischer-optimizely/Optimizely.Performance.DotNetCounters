@@ -27,12 +27,12 @@ jobs:
       - name: Build net472 (Optimizely V11)
         if: matrix.config == 'net472'
         run: |
-          msbuild Optimizely.Performance.DotNetCounters.sln /p:Configuration=Release /p:TargetFramework=net472 /p:DefineConstants="CMS11"
+          msbuild Optimizely.Performance.DotNetCounters.sln /p:Configuration=Release /p:TargetFramework=net472
 
       - name: Build net6.0 (Optimizely V12)
         if: matrix.config == 'net6.0'
         run: |
-          dotnet build Optimizely.Performance.DotNetCounters.sln -c Release /p:DefineConstants="CMS12"
+          dotnet build Optimizely.Performance.DotNetCounters.sln -c Release
 
       - name: Run unit tests (net6.0)
         if: matrix.config == 'net6.0'
