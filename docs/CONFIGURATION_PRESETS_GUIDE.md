@@ -56,7 +56,7 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V12-V13/`
 #### CLR Memory (9 counters)
 - **# Bytes in all Heaps** - Total managed memory
 - **% Time in GC** - Time spent garbage collecting
-- **Gen 0/1/2 Collections/sec** - Collection frequency per generation
+- **Gen 0/1/2 Collections** - Cumulative collection count per generation
 - **Gen 0/1/2 heap size** - Size of each generation
 - **Large Object Heap size** - LOH size
 

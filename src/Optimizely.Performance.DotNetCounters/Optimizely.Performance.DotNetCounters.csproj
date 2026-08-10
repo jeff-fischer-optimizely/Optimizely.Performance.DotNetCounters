@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net6.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -92,8 +92,12 @@
 
   <!-- .NET Framework 4.7.2 specific (V11) -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="EPiServer.CMS.Core" Version="11.*" PrivateAssets="compile" />
-    <PackageReference Include="EPiServer.Framework" Version="11.*" PrivateAssets="compile" />
+    <!-- Host-provided. PrivateAssets="all" + ExcludeAssets="runtime" so the CMS
+         assemblies are used for compilation only and are never copied into (or
+         upgraded in) the consuming site's bin. Pinned to the minimum supported
+         version so the host's existing binding redirects can satisfy us. -->
+    <PackageReference Include="EPiServer.CMS.Core" Version="11.1.0" PrivateAssets="all" ExcludeAssets="runtime" />
+    <PackageReference Include="EPiServer.Framework" Version="11.1.0" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.PerfCounterCollector" Version="2.22.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
@@ -104,14 +108,29 @@
 
   <!-- .NET 6 packages (V12) -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="EPiServer.CMS.Core" Version="12.*" PrivateAssets="compile" />
-    <PackageReference Include="EPiServer.Framework" Version="12.*" PrivateAssets="compile" />
+    <!-- Ordinary references, deliberately NOT PrivateAssets="all": CMS 12's type
+         scanner only loads assemblies whose dependency graph contains an EPiServer
+         package, so hiding these from the nuspec makes our [InitializableModule]
+         invisible and the library silently does nothing. The version is a floor,
+         not a pin - NuGet unification means a host on a newer CMS keeps its own. -->
+    <PackageReference Include="EPiServer.CMS.Core" Version="12.10.0" />
+    <PackageReference Include="EPiServer.Framework" Version="12.10.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
   </ItemGroup>
 
-  <!-- Note: V13 requires .NET 10 which is preview. This library works with V12 (.NET 6) and will support V13 when .NET 10 is released. -->
+  <!-- .NET 10 packages (V13) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <!-- Ordinary references; see the net6.0 group above for why these must stay
+         visible in the nuspec. -->
+    <PackageReference Include="EPiServer.CMS.Core" Version="13.0.0" />
+    <PackageReference Include="EPiServer.Framework" Version="13.0.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+  </ItemGroup>
 
 </Project>

@@ -1,6 +1,7 @@
 #if !NET472
 using System;
 using System.Linq;
+using EPiServer.Logging;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.EventCounterCollector;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,10 @@ namespace Optimizely.Performance.DotNetCounters.Services
     /// </summary>
     public static class EventCounterServiceExtensions
     {
+        // Resolved per call, not cached: this type is first touched during
+        // ConfigureContainer, before the LogManager factory is wired up.
+        private static ILogger Log => LogManager.GetLogger(typeof(EventCounterServiceExtensions));
+
         /// <summary>
         /// Configures Event Counter collection for Application Insights.
         /// </summary>
@@ -58,8 +63,8 @@ namespace Optimizely.Performance.DotNetCounters.Services
                         catch (Exception ex)
                         {
                             // Log but continue - some counters may not be available
-                            System.Diagnostics.Debug.WriteLine(
-                                $"Failed to add event counter {counter.EventSourceName}/{counter.CounterName}: {ex.Message}");
+                            Log.Warning(
+                                $"Failed to add event counter {counter.EventSourceName}/{counter.CounterName}", ex);
                         }
                     }
                 });

@@ -86,13 +86,13 @@ To collect only specific counters:
            reportedName="ASP.NET Requests Queued" />
       
       <!-- Memory -->
-      <add categoryName=".NET CLR Memory(_Global_)\# Bytes in all Heaps"
+      <add categoryName="\.NET CLR Memory(_Global_)\# Bytes in all Heaps"
            reportedName="CLR Heap Size" />
-      <add categoryName=".NET CLR Memory(_Global_)\% Time in GC"
+      <add categoryName="\.NET CLR Memory(_Global_)\% Time in GC"
            reportedName="CLR % Time in GC" />
       
       <!-- Threading -->
-      <add categoryName=".NET CLR LocksAndThreads(_Global_)\# of current logical Threads"
+      <add categoryName="\.NET CLR LocksAndThreads(_Global_)\# of current logical Threads"
            reportedName="CLR Logical Threads" />
     </counters>
   </performanceCounters>
@@ -235,7 +235,7 @@ customMetrics
 
 ```kusto
 customMetrics
-| where name in ("CLR % Time in GC", "CLR Gen 0 Collections/sec", "CLR Gen 2 Collections/sec")
+| where name in ("CLR % Time in GC", "CLR Gen 0 Collections", "CLR Gen 2 Collections")
 | summarize avg(value) by name, bin(timestamp, 1m)
 | render timechart
 ```
@@ -308,7 +308,7 @@ Create a comprehensive performance dashboard using Application Insights Workbook
       "type": 9,
       "content": {
         "version": "KqlParameterItem/1.0",
-        "query": "customMetrics | where name in (\"CLR Gen 0 Collections/sec\", \"CLR Gen 1 Collections/sec\", \"CLR Gen 2 Collections/sec\") | summarize avg(value) by name, bin(timestamp, 1m)",
+        "query": "customMetrics | where name in (\"CLR Gen 0 Collections\", \"CLR Gen 1 Collections\", \"CLR Gen 2 Collections\") | summarize avg(value) by name, bin(timestamp, 1m)",
         "chartType": "line",
         "title": "Garbage Collection Frequency"
       }

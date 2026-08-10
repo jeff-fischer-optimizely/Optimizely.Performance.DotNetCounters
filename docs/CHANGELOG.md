@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Default Counters - .NET Framework
 - **ASP.NET**: Requests Queued, Requests/Sec, Request Wait Time, Request Execution Time
 - **CLR Threads**: Logical Threads, Physical Threads, Contention Rate, Queue Length
-- **CLR Memory**: Heap Size, % Time in GC, Gen 0/1/2 Collections/sec, LOH Size
+- **CLR Memory**: Heap Size, % Time in GC, Gen 0/1/2 Collections, LOH Size
 - **Process**: Thread Count, Handle Count
 
 #### Default Counters - .NET Core+

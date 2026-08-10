@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using EPiServer.Logging;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,8 @@ namespace Optimizely.Performance.DotNetCounters.Services
     /// </summary>
     public class PerformanceCounterService
     {
+        private static ILogger Log => LogManager.GetLogger(typeof(PerformanceCounterService));
+
         private readonly PerformanceCollectorModule _module;
         private bool _isInitialized;
 
@@ -40,6 +43,8 @@ namespace Optimizely.Performance.DotNetCounters.Services
                 return;
             }
 
+            _module.EnableIISExpressPerformanceCounters = options.EnableIISExpressPerformanceCounters;
+
             // Add configured counters or use defaults
             var counters = options.WindowsCounters?.Any() == true
                 ? options.WindowsCounters
@@ -56,8 +61,7 @@ namespace Optimizely.Performance.DotNetCounters.Services
                 catch (Exception ex)
                 {
                     // Log but continue - some counters may not be available
-                    System.Diagnostics.Debug.WriteLine(
-                        $"Failed to add performance counter {counter.CategoryName}: {ex.Message}");
+                    Log.Warning($"Failed to add performance counter {counter.CategoryName}", ex);
                 }
             }
 
@@ -95,6 +99,7 @@ namespace Optimizely.Performance.DotNetCounters.Services
                 if (section != null && section.Enabled)
                 {
                     options.Enabled = section.Enabled;
+                    options.EnableIISExpressPerformanceCounters = section.EnableIISExpressPerformanceCounters;
                     options.WindowsCounters = section.Counters
                         .Cast<PerformanceCounterElement>()
                         .Select(c => new WindowsPerformanceCounter
@@ -108,8 +113,7 @@ namespace Optimizely.Performance.DotNetCounters.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Failed to load performance counter configuration from web.config: {ex.Message}");
+                Log.Error("Failed to load performance counter configuration from web.config", ex);
             }
         }
     }
@@ -126,6 +130,13 @@ namespace Optimizely.Performance.DotNetCounters.Services
         {
             get => (bool)(this["enabled"] ?? true);
             set => this["enabled"] = value;
+        }
+
+        [ConfigurationProperty("enableIISExpressPerformanceCounters", DefaultValue = false)]
+        public bool EnableIISExpressPerformanceCounters
+        {
+            get => (bool)(this["enableIISExpressPerformanceCounters"] ?? false);
+            set => this["enableIISExpressPerformanceCounters"] = value;
         }
 
         [ConfigurationProperty("counters")]

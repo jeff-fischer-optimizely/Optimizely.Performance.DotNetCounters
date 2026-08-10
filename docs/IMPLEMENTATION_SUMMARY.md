@@ -115,7 +115,7 @@ Supports both legacy (`web.config`) and modern (`appsettings.json`) configuratio
 **.NET CLR Memory** (6 counters):
 - \# Bytes in all Heaps
 - % Time in GC
-- Gen 0/1/2 Collections/sec
+- Gen 0/1/2 Collections
 - Large Object Heap size
 
 **Process** (2 counters):

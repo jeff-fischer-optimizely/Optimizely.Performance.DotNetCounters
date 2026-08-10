@@ -22,6 +22,14 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
         /// Gets or sets the Windows Performance Counters to collect (.NET Framework only).
         /// </summary>
         public List<WindowsPerformanceCounter> WindowsCounters { get; set; } = new List<WindowsPerformanceCounter>();
+
+        /// <summary>
+        /// Gets or sets whether to collect performance counters under IIS Express.
+        /// Application Insights disables collection there by default, so a developer
+        /// running the site locally would otherwise see no counters at all. Leave this
+        /// off in production, where the site runs under full IIS.
+        /// </summary>
+        public bool EnableIISExpressPerformanceCounters { get; set; }
 #endif
 
 #if !NET472

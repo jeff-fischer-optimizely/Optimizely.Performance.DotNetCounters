@@ -128,8 +128,8 @@ code appsettings.Production.json
     <performanceCounters enabled="true">
       <counters>
         <add categoryName="\ASP.NET\Requests Queued" reportedName="ASP.NET Requests Queued" />
-        <add categoryName=".NET CLR Memory(_Global_)\# Bytes in all Heaps" reportedName="CLR Heap Size" />
-        <add categoryName=".NET CLR Memory(_Global_)\% Time in GC" reportedName="CLR % Time in GC" />
+        <add categoryName="\.NET CLR Memory(_Global_)\# Bytes in all Heaps" reportedName="CLR Heap Size" />
+        <add categoryName="\.NET CLR Memory(_Global_)\% Time in GC" reportedName="CLR % Time in GC" />
       </counters>
     </performanceCounters>
   </optimizely>

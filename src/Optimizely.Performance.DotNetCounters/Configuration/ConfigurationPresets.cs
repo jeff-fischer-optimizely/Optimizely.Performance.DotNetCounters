@@ -23,14 +23,14 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                 new WindowsPerformanceCounter { CategoryName = @"\ASP.NET Applications(__Total__)\Requests Failed", ReportedName = "ASP.NET Requests Failed" },
 
                 // Memory Health
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 2 Collections/sec", ReportedName = "CLR Gen 2 Collections/sec" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Large Object Heap size", ReportedName = "CLR LOH Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Gen 2 Collections", ReportedName = "CLR Gen 2 Collections" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\Large Object Heap size", ReportedName = "CLR LOH Size" },
 
                 // Threading & Contention
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\Contention Rate / sec", ReportedName = "CLR Contention Rate" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\# of current logical Threads", ReportedName = "CLR Logical Threads" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\Contention Rate / sec", ReportedName = "CLR Contention Rate" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\# of current logical Threads", ReportedName = "CLR Logical Threads" },
 
                 // Process Health
                 new WindowsPerformanceCounter { CategoryName = @"\Process(??APP_WIN32_PROC??)\% Processor Time", ReportedName = "Process CPU %" },
@@ -47,8 +47,8 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
             return new List<WindowsPerformanceCounter>
             {
                 new WindowsPerformanceCounter { CategoryName = @"\ASP.NET\Requests Queued", ReportedName = "ASP.NET Requests Queued" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" }
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" }
             };
         }
 
@@ -72,22 +72,22 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                 new WindowsPerformanceCounter { CategoryName = @"\ASP.NET Applications(__Total__)\Cache Total Misses", ReportedName = "ASP.NET Cache Misses" },
 
                 // Complete CLR Memory
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 0 Collections/sec", ReportedName = "CLR Gen 0 Collections/sec" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 1 Collections/sec", ReportedName = "CLR Gen 1 Collections/sec" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 2 Collections/sec", ReportedName = "CLR Gen 2 Collections/sec" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Large Object Heap size", ReportedName = "CLR LOH Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 0 heap size", ReportedName = "CLR Gen 0 Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 1 heap size", ReportedName = "CLR Gen 1 Size" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Memory(_Global_)\Gen 2 heap size", ReportedName = "CLR Gen 2 Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Bytes in all Heaps", ReportedName = "CLR Heap Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\% Time in GC", ReportedName = "CLR % Time in GC" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Gen 0 Collections", ReportedName = "CLR Gen 0 Collections" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Gen 1 Collections", ReportedName = "CLR Gen 1 Collections" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\# Gen 2 Collections", ReportedName = "CLR Gen 2 Collections" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\Large Object Heap size", ReportedName = "CLR LOH Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\Gen 0 heap size", ReportedName = "CLR Gen 0 Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\Gen 1 heap size", ReportedName = "CLR Gen 1 Size" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Memory(_Global_)\Gen 2 heap size", ReportedName = "CLR Gen 2 Size" },
 
                 // Complete Threading
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\# of current logical Threads", ReportedName = "CLR Logical Threads" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\# of current physical Threads", ReportedName = "CLR Physical Threads" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\Contention Rate / sec", ReportedName = "CLR Contention Rate" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\Current Queue Length", ReportedName = "CLR Thread Queue Length" },
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR LocksAndThreads(_Global_)\Total # of Contentions", ReportedName = "CLR Total Contentions" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\# of current logical Threads", ReportedName = "CLR Logical Threads" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\# of current physical Threads", ReportedName = "CLR Physical Threads" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\Contention Rate / sec", ReportedName = "CLR Contention Rate" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\Current Queue Length", ReportedName = "CLR Thread Queue Length" },
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR LocksAndThreads(_Global_)\Total # of Contentions", ReportedName = "CLR Total Contentions" },
 
                 // Process Metrics
                 new WindowsPerformanceCounter { CategoryName = @"\Process(??APP_WIN32_PROC??)\% Processor Time", ReportedName = "Process CPU %" },
@@ -96,7 +96,7 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                 new WindowsPerformanceCounter { CategoryName = @"\Process(??APP_WIN32_PROC??)\Handle Count", ReportedName = "Process Handle Count" },
 
                 // CLR Exceptions
-                new WindowsPerformanceCounter { CategoryName = @".NET CLR Exceptions(_Global_)\# of Exceps Thrown / sec", ReportedName = "CLR Exceptions/sec" }
+                new WindowsPerformanceCounter { CategoryName = @"\.NET CLR Exceptions(_Global_)\# of Exceps Thrown / sec", ReportedName = "CLR Exceptions/sec" }
             };
         }
 #endif

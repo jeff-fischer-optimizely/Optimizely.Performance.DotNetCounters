@@ -1,6 +1,7 @@
 using System;
 using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
+using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 
 #if NET472
@@ -20,7 +21,25 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
     [InitializableModule]
     public class PerformanceCountersInitializationModule : IConfigurableModule
     {
+        // EPiServer.Logging is used rather than Microsoft.Extensions.Logging so the same
+        // call works on all three targets: on V11 there is no MEL pipeline to attach to,
+        // and on V12/V13 ConfigureContainer runs before anything can be resolved from the
+        // container. EPiServer.Logging routes to log4net on V11 and to the host's
+        // ILoggerFactory on V12/V13.
+        //
+        // Deliberately resolved per call rather than cached in a static field: on V12/V13
+        // the LogManager factory is not wired up yet when ConfigureContainer runs, so a
+        // logger captured at that point stays a no-op logger for the life of the process.
+        private static ILogger Log =>
+            LogManager.GetLogger(typeof(PerformanceCountersInitializationModule));
+
         private bool _initialized;
+
+#if !NET472
+        // ConfigureContainer runs before logging is available, so its outcome is stashed
+        // here and reported from Initialize, which runs once the host is up.
+        private Exception? _configureError;
+#endif
 
         public void Initialize(InitializationEngine context)
         {
@@ -32,6 +51,8 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 #if NET472
             // .NET Framework initialization (Optimizely V11)
             InitializeFramework(context);
+#else
+            ReportCoreResult();
 #endif
 
             _initialized = true;
@@ -64,14 +85,14 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 var service = new PerformanceCounterService();
                 service.Initialize(configuration);
 
-                System.Diagnostics.Debug.WriteLine(
+                Log.Information(
                     "Optimizely Performance Counters initialized for .NET Framework 4.7.2 (V11)");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Failed to initialize Optimizely Performance Counters: {ex.Message}");
-                // Don't throw - performance counters are optional
+                // Don't throw - performance counters are optional - but this must be
+                // loud, or the library silently does nothing for the life of the site.
+                Log.Error("Failed to initialize Optimizely Performance Counters", ex);
             }
         }
 #endif
@@ -87,27 +108,30 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 
                 // Register performance counter services
                 context.Services.AddOptimizelyPerformanceCounters(configuration);
-
-#if NET6_0
-                System.Diagnostics.Debug.WriteLine(
-                    "Optimizely Performance Counters initialized for .NET 6 (V12)");
-#elif NET8_0
-                System.Diagnostics.Debug.WriteLine(
-                    "Optimizely Performance Counters initialized for .NET 8 (V13)");
-#elif NET9_0
-                System.Diagnostics.Debug.WriteLine(
-                    "Optimizely Performance Counters initialized for .NET 9 (V13)");
-#elif NET10_0
-                System.Diagnostics.Debug.WriteLine(
-                    "Optimizely Performance Counters initialized for .NET 10 (V13)");
-#endif
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"Failed to initialize Optimizely Performance Counters: {ex.Message}");
-                // Don't throw - performance counters are optional
+                // Don't throw - performance counters are optional. Reported from
+                // Initialize, once the host's logging pipeline exists.
+                _configureError = ex;
             }
+        }
+
+        private void ReportCoreResult()
+        {
+            if (_configureError != null)
+            {
+                // This must be loud, or the library silently does nothing for the
+                // life of the site.
+                Log.Error("Failed to initialize Optimizely Performance Counters", _configureError);
+                return;
+            }
+
+#if NET6_0
+            Log.Information("Optimizely Performance Counters initialized for .NET 6 (V12)");
+#elif NET10_0
+            Log.Information("Optimizely Performance Counters initialized for .NET 10 (V13)");
+#endif
         }
 #endif
 

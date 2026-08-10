@@ -133,9 +133,9 @@ The following counters are collected by default:
 **.NET CLR Memory:**
 - \# Bytes in all Heaps
 - % Time in GC
-- Gen 0 Collections/sec
-- Gen 1 Collections/sec
-- Gen 2 Collections/sec
+- Gen 0 Collections
+- Gen 1 Collections
+- Gen 2 Collections
 - Large Object Heap size
 
 **Process:**
