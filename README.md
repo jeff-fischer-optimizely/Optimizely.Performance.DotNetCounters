@@ -12,15 +12,51 @@ This package turns them on. Install it and, on the next application start, an Op
 - **One configuration surface across V11, V12 and V13.** The same `Optimizely:PerformanceCounters` section works on all three, which matters if you are running mixed versions through a migration.
 - **Nothing to write.** Auto-registers via `IConfigurableModule`; a single setting disables it again.
 
-## Alternatives, and when to prefer them
+## What this gives you on your version
 
-| Option | What it gives you | When it's the better choice |
-|---|---|---|
-| **Do nothing** | The AI SDK's built-in defaults: process CPU, private bytes and available memory on .NET Framework; a handful of `System.Runtime` counters on .NET Core+ | You only need capacity trends, not runtime diagnostics |
-| **Wire the telemetry modules yourself** | `PerformanceCollectorModule` / `EventCounterCollectionModule` configured directly in `ApplicationInsights.config` or `ConfigureTelemetryModule<>()` | You want a small bespoke list and are happy to own the counter strings. This package is essentially that plus a vetted list and V11/V12/V13 parity |
-| **`dotnet-counters`** | Live counter values from an attached process | Reproducing a problem on a machine you can reach right now. There is no retention, so it cannot answer "what happened at 03:00 last Tuesday" |
-| **OpenTelemetry** | `OpenTelemetry.Instrumentation.Runtime`, vendor-neutral, exportable anywhere | V12/V13 sites already moving to OTel. There is no .NET Framework story, so it does not help V11 |
-| **Azure Monitor / DXP platform metrics** | Host-level CPU, memory, disk | Infrastructure capacity questions. These sit outside the process and cannot see the CLR |
+The value proposition is genuinely different on each Optimizely version, because the diagnostic tooling available to .NET Framework and to modern .NET is not remotely the same. Find your version below.
+
+### Optimizely V11 — .NET Framework 4.7.2 (Windows)
+
+**What you get:** 16 Windows Performance Counters by default — ASP.NET request queue depth, requests/sec, request wait and execution time; CLR logical and physical thread counts, contention rate and thread queue length; total managed heap bytes, % time in GC, Gen 0/1/2 collection counts and LOH size; process thread and handle counts. Collected by the Application Insights `PerformanceCollectorModule` already present in your site.
+
+**Alternatives that exist:**
+
+| Option | Trade-off |
+|---|---|
+| Hand-edit `<Counters>` under `PerformanceCollectorModule` in `ApplicationInsights.config` | The closest equivalent, and the mechanism this package uses. But `ApplicationInsights.config` is a NuGet content file, so SDK upgrades can rewrite it, and there is no compile-time or startup check on the counter path strings |
+| Application Insights Agent (codeless IIS attach) | No deployment change, but the counter set is fixed — you cannot ask it for LOH size or contention rate |
+| PerfMon / Windows data collector sets | Full access to every counter on the box, but per-server, no retention in Application Insights, and no correlation with your request telemetry |
+| Commercial APM (New Relic, Dynatrace, AppDynamics) | Far more capable, at the price of a second agent, a second data pipeline and a second bill |
+
+**The gap this fills:** the modern .NET diagnostics stack does not reach .NET Framework at all. EventCounters and EventPipe are .NET Core constructs, so `dotnet-counters` cannot attach to a V11 site, and OpenTelemetry's runtime metrics instrumentation is built around the .NET Core runtime. That leaves `PerformanceCollectorModule` as the only in-process route from CLR internals into Application Insights on V11 — and its weak point is that a wrong counter path fails silently rather than throwing. A missing leading `\`, or a plausible-sounding name like `Gen 0 Collections/sec` that does not actually exist, collects nothing for the life of the site with no error anywhere. Both of those were real bugs found and fixed here by running against a live Foundation V11 site. On top of that, Application Insights disables performance counter collection under IIS Express by default, so a developer testing locally sees an empty dashboard and concludes the whole thing is broken; `EnableIISExpressPerformanceCounters` exists for exactly that. **This is where the package earns its keep most:** V11 is the version with the fewest alternatives, the most legacy load, and the sharpest silent-failure mode.
+
+### Optimizely V12 — .NET 6 / .NET 8
+
+**What you get:** 23 EventCounters by default — CPU usage, working set, GC heap size, Gen 0/1/2 collection counts *and* generation sizes, time in GC, LOH size, allocation rate, loaded assembly count, exception count, thread pool thread count, queue length and completed items, monitor lock contention count, active timer count, plus ASP.NET Core requests/sec, total, current and failed requests.
+
+**Alternatives that exist:**
+
+| Option | Trade-off |
+|---|---|
+| `services.ConfigureTelemetryModule<EventCounterCollectionModule>(...)` in `Startup.cs` | Perfectly reasonable — this is roughly what the package does internally, in about fifteen lines. You own the counter list, and changing it means a code change and a redeploy rather than an `appsettings.json` edit |
+| `dotnet-counters` | Live values from an attached process. Excellent for reproducing something now; no retention, so it cannot tell you what happened at 03:00 last Tuesday |
+| OpenTelemetry (`OpenTelemetry.Instrumentation.Runtime` + an Azure Monitor exporter) | Vendor-neutral and the strategic direction. It is a different telemetry pipeline, though — adopting it alongside a classic Application Insights SDK site is a migration, not a configuration change |
+| Azure Monitor / DXP platform metrics | Host-level CPU, memory and disk. Outside the process, so blind to the CLR |
+
+**The gap this fills:** smaller and more honest here — real alternatives exist on V12, and if you are already moving to OpenTelemetry you should keep going. What this package adds is a vetted default list (the SDK's own defaults omit GC generation sizes, LOH size and assembly count, which are precisely the three that identify a leak), configuration through `appsettings.json` rather than code, and the same configuration shape as your V11 and V13 sites.
+
+### Optimizely V13 — .NET 10
+
+**What you get:** the same 23 EventCounters as V12, through the same `EventCounterCollectionModule`, configured identically.
+
+**Alternatives that exist:** the same set as V12. OpenTelemetry is more mature on .NET 10, and Microsoft's forward-looking recommendation is the Azure Monitor OpenTelemetry Distro; newer .NET releases also surface runtime metrics through `System.Diagnostics.Metrics`, which OTel consumes natively. If you are greenfielding a V13 site with no legacy Application Insights investment, that path is worth serious consideration.
+
+**The gap this fills:** V13 is new, and the practical reality for most teams is an upgrade rather than a greenfield build. If your V11 or V12 site already reports these counters, this package keeps the same coverage and the same configuration section working after the upgrade, with no monitoring redesign in the middle of a CMS migration. One caveat worth setting expectations on: the *metric names* do change across the .NET Framework → modern .NET boundary, because the underlying counter APIs are different — V11 reports `CLR % Time in GC`, V12 and V13 report `time-in-gc`. Coverage and configuration carry over; V11-era Kusto queries and dashboards need their metric names updated once. V12 → V13 is a clean pass-through with no change at all.
+
+### Regardless of version
+
+Counter collection runs on a background thread on a 60-second interval, failed reads are swallowed rather than thrown, and the whole thing switches off with a single setting. Initialization success and failure are both logged, so a misconfigured site tells you so instead of quietly reporting nothing.
 
 ## Supported versions
 
