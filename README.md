@@ -1,6 +1,40 @@
 # Optimizely Performance Counters
 
-A multi-targeted .NET library that provides seamless performance counter integration for Optimizely CMS across all major versions and .NET platforms.
+Application Insights tells you a great deal about your Optimizely site's *requests* and almost nothing about the *process serving them*. When the site slows down, the question you actually need answered — is this garbage collection, thread pool starvation, lock contention, a large object heap that never shrinks, or plain CPU exhaustion? — is answered by .NET runtime counters, and the Application Insights SDK does not collect most of them by default.
+
+This package turns them on. Install it and, on the next application start, an Optimizely initialization module registers a curated set of runtime counters with the Application Insights SDK your site already has. The metrics land in `customMetrics` next to your existing telemetry, queryable in Kusto and chartable against request duration. No code changes, no separate agent, no second monitoring bill.
+
+## Why you'd want this
+
+- **Diagnose causes, not just symptoms.** Request duration tells you the site is slow. `CLR % Time in GC`, `threadpool-queue-length`, `monitor-lock-contention-count` and `ASP.NET Requests Queued` tell you why.
+- **Broader than the SDK default.** GC generation sizes, LOH size, allocation rate, loaded-assembly count and the ASP.NET request queue are not in Application Insights' default counter set. They are the ones that matter during a memory or throughput incident.
+- **Counter names that are correct.** Windows performance counter paths fail silently when they are wrong — a missing leading `\` or a plausible-but-nonexistent name like `Gen 0 Collections/sec` simply collects nothing, forever, with no error. The defaults here are verified against running Foundation V11, V12 and V13 sites.
+- **One configuration surface across V11, V12 and V13.** The same `Optimizely:PerformanceCounters` section works on all three, which matters if you are running mixed versions through a migration.
+- **Nothing to write.** Auto-registers via `IConfigurableModule`; a single setting disables it again.
+
+## Alternatives, and when to prefer them
+
+| Option | What it gives you | When it's the better choice |
+|---|---|---|
+| **Do nothing** | The AI SDK's built-in defaults: process CPU, private bytes and available memory on .NET Framework; a handful of `System.Runtime` counters on .NET Core+ | You only need capacity trends, not runtime diagnostics |
+| **Wire the telemetry modules yourself** | `PerformanceCollectorModule` / `EventCounterCollectionModule` configured directly in `ApplicationInsights.config` or `ConfigureTelemetryModule<>()` | You want a small bespoke list and are happy to own the counter strings. This package is essentially that plus a vetted list and V11/V12/V13 parity |
+| **`dotnet-counters`** | Live counter values from an attached process | Reproducing a problem on a machine you can reach right now. There is no retention, so it cannot answer "what happened at 03:00 last Tuesday" |
+| **OpenTelemetry** | `OpenTelemetry.Instrumentation.Runtime`, vendor-neutral, exportable anywhere | V12/V13 sites already moving to OTel. There is no .NET Framework story, so it does not help V11 |
+| **Azure Monitor / DXP platform metrics** | Host-level CPU, memory, disk | Infrastructure capacity questions. These sit outside the process and cannot see the CLR |
+
+## Supported versions
+
+| Optimizely CMS | .NET | Package asset | Counter API |
+|---|---|---|---|
+| V11 | .NET Framework 4.7.2+ (Windows) | `net472` | Windows Performance Counters |
+| V12 | .NET 6, .NET 8 | `net6.0` | EventCounters |
+| V13 | .NET 10 | `net10.0` | EventCounters |
+
+### Older versions
+
+- **CMS 10 and earlier are not supported.** The `net472` assembly will not load on .NET Framework below 4.7.2, and it compiles against `EPiServer.Framework` 11.1.0. A CMS 9/10 site would need a `net45`/`net461` target built against the matching CMS assemblies.
+- **There is no `net5.0` asset**, so a CMS 12 site must be running on .NET 6 or later. Retarget the host first; no change to this package is required.
+- **V11 support is Windows-only** by nature — Windows Performance Counters do not exist elsewhere. The EventCounter path used by V12/V13 works on Linux and in containers.
 
 ## Documentation
 
@@ -15,22 +49,12 @@ A multi-targeted .NET library that provides seamless performance counter integra
 
 ## Features
 
-- **Multi-Platform Support**: Works with .NET Framework 4.7.2, .NET 6, 8, 9, and 10
+- **Multi-Platform Support**: Ships `net472`, `net6.0` and `net10.0` assets — see [Supported versions](#supported-versions)
 - **Multi-Version Support**: Compatible with Optimizely V11, V12, and V13
 - **Smart Counter Selection**: Automatically uses Windows Performance Counters on .NET Framework and Event Counters on .NET Core+
 - **Configuration-Driven**: Configure counters via `web.config` or `appsettings.json`
 - **Auto-Initialization**: Integrates seamlessly using Optimizely's `IConfigurableModule`
 - **Application Insights Integration**: Sends metrics directly to Application Insights
-
-## Supported Platforms
-
-| .NET Version | Optimizely Version | Counter Type |
-|--------------|-------------------|--------------|
-| .NET Framework 4.7.2 | V11 | Windows Performance Counters |
-| .NET 6 | V12 | Event Counters |
-| .NET 8 | V13 | Event Counters |
-| .NET 9 | V13 | Event Counters |
-| .NET 10 | V13 | Event Counters |
 
 ## Installation
 
@@ -207,14 +231,14 @@ customMetrics
 
 1. Ensure the Application Pool identity has permissions to read performance counters
 2. Verify the performance counter names are correct (use Performance Monitor to browse available counters)
-3. Check the Debug output window for error messages during initialization
+3. Check your site's log for messages from `Optimizely.Performance.DotNetCounters` — the module logs one `Information` line on successful start and an `Error` with the exception if initialization fails (log4net on V11)
 
 ### .NET Core: Event Counters Not Collecting
 
 1. Ensure `Microsoft.ApplicationInsights.AspNetCore` package is installed
 2. Verify the Application Insights connection string is correct
 3. Check that the event source names and counter names are spelled correctly
-4. Review the Debug output for initialization errors
+4. Review your site's log for messages from `Optimizely.Performance.DotNetCounters` — the module logs one `Information` line on successful start and an `Error` with the exception if initialization fails
 
 ### Disabling Counter Collection
 
