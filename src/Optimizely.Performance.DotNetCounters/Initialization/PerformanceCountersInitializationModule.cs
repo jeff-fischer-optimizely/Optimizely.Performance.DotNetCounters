@@ -108,6 +108,11 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 
                 // Register performance counter services
                 context.Services.AddOptimizelyPerformanceCounters(configuration);
+
+                // Cache dependency instrumentation. Takes the context rather than the service
+                // collection because it has to defer its work to ConfigurationComplete, which
+                // is the only point at which Optimizely 12's cache registrations exist.
+                context.AddOptimizelyCacheInstrumentation(configuration);
             }
             catch (Exception ex)
             {
