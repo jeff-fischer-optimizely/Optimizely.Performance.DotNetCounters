@@ -37,6 +37,52 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                     ReportedName = "ASP.NET Request Execution Time"
                 },
 
+                // Cache memory pressure.
+                //
+                // "Cache API" counts entries inserted through HttpRuntime.Cache, which is
+                // what EPiServer's HttpRuntimeCache uses - so these track the content cache
+                // itself. "Cache Total" additionally includes ASP.NET's internal cache
+                // (output cache, compiled pages), so it is the whole-process picture.
+                //
+                // A rising Trims count means ASP.NET is evicting cache entries to relieve
+                // memory pressure. Because EPiServer entries carry dependencies, a trim can
+                // cascade far beyond the entries ASP.NET chose to drop.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache API Trims",
+                    ReportedName = "ASP.NET Cache API Trims"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache Total Trims",
+                    ReportedName = "ASP.NET Cache Total Trims"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache % Machine Memory Limit Used",
+                    ReportedName = "ASP.NET Cache % Machine Memory Limit Used"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache % Process Memory Limit Used",
+                    ReportedName = "ASP.NET Cache % Process Memory Limit Used"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache API Entries",
+                    ReportedName = "ASP.NET Cache API Entries"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache Total Entries",
+                    ReportedName = "ASP.NET Cache Total Entries"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = @"\ASP.NET Applications(__Total__)\Cache API Turnover Rate",
+                    ReportedName = "ASP.NET Cache API Turnover Rate"
+                },
+
                 // .NET CLR LocksAndThreads
                 new WindowsPerformanceCounter
                 {

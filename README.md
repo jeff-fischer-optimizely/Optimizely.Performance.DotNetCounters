@@ -18,7 +18,9 @@ The value proposition is genuinely different on each Optimizely version, because
 
 ### Optimizely V11 — .NET Framework 4.7.2 (Windows)
 
-**What you get:** 16 Windows Performance Counters by default — ASP.NET request queue depth, requests/sec, request wait and execution time; CLR logical and physical thread counts, contention rate and thread queue length; total managed heap bytes, % time in GC, Gen 0/1/2 collection counts and LOH size; process thread and handle counts. Collected by the Application Insights `PerformanceCollectorModule` already present in your site.
+**What you get:** 23 Windows Performance Counters by default — ASP.NET request queue depth, requests/sec, request wait and execution time; cache trims, cache entry counts, turnover rate and the machine and process memory-limit percentages that drive them; CLR logical and physical thread counts, contention rate and thread queue length; total managed heap bytes, % time in GC, Gen 0/1/2 collection counts and LOH size; process thread and handle counts. Collected by the Application Insights `PerformanceCollectorModule` already present in your site.
+
+The cache counters are worth calling out. `Cache API Trims` rising means ASP.NET is evicting entries to relieve memory pressure — and because Optimizely's content cache hangs entries off master keys, a trim can cascade well beyond the entries ASP.NET actually chose to drop. Paired with `Cache % Process Memory Limit Used`, that turns a previously invisible failure mode into two lines on a chart.
 
 **Alternatives that exist:**
 
