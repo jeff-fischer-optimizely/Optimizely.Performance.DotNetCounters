@@ -57,5 +57,58 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
 
         internal TimeSpan SampleTimeout =>
             TimeSpan.FromSeconds(Math.Max(1, SampleTimeoutSeconds));
+
+#if NET472
+        /// <summary>
+        /// Applies any settings present in <c>appSettings</c>, keyed by
+        /// <see cref="SectionName"/> plus the property name.
+        /// </summary>
+        /// <remarks>
+        /// V11 sites rarely have an <c>IConfiguration</c> registered, and without one there is
+        /// no way to turn the probe off - which is not an acceptable state for the only
+        /// component here that runs a thread of its own. <c>appSettings</c> is the mechanism a
+        /// .NET Framework site already has, and using the same key path as the
+        /// <c>appsettings.json</c> section keeps one documented name across all three versions.
+        /// A malformed value is ignored rather than thrown, on the same reasoning as everywhere
+        /// else in this package: a typo in a monitoring setting must not stop a site starting.
+        /// </remarks>
+        /// <param name="options">The options to populate.</param>
+        public static void BindAppSettings(ThreadPoolProbeOptions options)
+        {
+            if (options == null)
+            {
+                return;
+            }
+
+            options.Enabled = ReadBoolean(nameof(Enabled), options.Enabled);
+            options.SampleIntervalSeconds =
+                ReadInt32(nameof(SampleIntervalSeconds), options.SampleIntervalSeconds);
+            options.SampleTimeoutSeconds =
+                ReadInt32(nameof(SampleTimeoutSeconds), options.SampleTimeoutSeconds);
+            options.SlowSampleThresholdMilliseconds =
+                ReadInt32(nameof(SlowSampleThresholdMilliseconds), options.SlowSampleThresholdMilliseconds);
+            options.LogsPerMinute = ReadInt32(nameof(LogsPerMinute), options.LogsPerMinute);
+        }
+
+        private static string? ReadSetting(string name)
+        {
+            try
+            {
+                return System.Configuration.ConfigurationManager.AppSettings[SectionName + ":" + name];
+            }
+            catch
+            {
+                // A configuration section this package does not own can be malformed, and
+                // reading it throws rather than returning null.
+                return null;
+            }
+        }
+
+        private static bool ReadBoolean(string name, bool fallback) =>
+            bool.TryParse(ReadSetting(name), out var value) ? value : fallback;
+
+        private static int ReadInt32(string name, int fallback) =>
+            int.TryParse(ReadSetting(name), out var value) ? value : fallback;
+#endif
     }
 }

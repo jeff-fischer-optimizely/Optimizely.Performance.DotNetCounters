@@ -58,7 +58,12 @@ namespace Optimizely.Performance.DotNetCounters.Diagnostics
 
         private readonly TelemetryClient? _telemetryClient;
         private readonly ThreadPoolProbeOptions _options;
-        private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
+
+        // Deliberately never disposed. The sampler waits on this from its own thread, so any
+        // disposal would race that wait, and touching a disposed wait handle throws - on a
+        // thread created by hand, where an unhandled exception terminates the process. One
+        // event held for the life of a single process-wide probe is the cheaper trade.
+        private readonly ManualResetEventSlim _stop = new ManualResetEventSlim(false);
 
         private Thread? _thread;
         private int _started;
@@ -91,7 +96,9 @@ namespace Optimizely.Performance.DotNetCounters.Diagnostics
         /// </summary>
         public void Start()
         {
-            if (!_options.Enabled || Interlocked.Exchange(ref _started, 1) != 0)
+            if (!_options.Enabled
+                || Volatile.Read(ref _disposed) != 0
+                || Interlocked.Exchange(ref _started, 1) != 0)
             {
                 return;
             }
@@ -118,47 +125,41 @@ namespace Optimizely.Performance.DotNetCounters.Diagnostics
                 return;
             }
 
-            try
-            {
-                _cancellation.Cancel();
-                _cancellation.Dispose();
-            }
-            catch
-            {
-                // Shutdown races are not worth reporting; the thread is a background thread
-                // and cannot keep the process alive regardless.
-            }
+            _stop.Set();
         }
 
+        /// <remarks>
+        /// The whole body is guarded. This runs on a thread created here rather than a pool
+        /// thread, so anything escaping it is an unhandled exception, which on .NET Core takes
+        /// the process with it. A performance counter has no business being able to do that.
+        /// </remarks>
         private void Loop()
         {
-            var token = _cancellation.Token;
-
-            while (!token.IsCancellationRequested)
+            try
             {
-                try
+                while (!_stop.IsSet)
                 {
-                    Sample();
-                }
-                catch (Exception ex)
-                {
-                    // Never let a sampling fault take the thread down: a probe that dies at the
-                    // first hiccup leaves a silent gap that looks identical to a healthy pool.
-                    TryLog(() => Log.Warning("Thread pool probe sample failed.", ex));
-                }
+                    try
+                    {
+                        Sample();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Never let a sampling fault take the thread down: a probe that dies at
+                        // the first hiccup leaves a silent gap that looks identical to a
+                        // healthy pool.
+                        TryLog(() => Log.Warning("Thread pool probe sample failed.", ex));
+                    }
 
-                try
-                {
-                    if (token.WaitHandle.WaitOne(_options.SampleInterval))
+                    if (_stop.Wait(_options.SampleInterval))
                     {
                         return;
                     }
                 }
-                catch (ObjectDisposedException)
-                {
-                    // Disposed underneath us during shutdown.
-                    return;
-                }
+            }
+            catch
+            {
+                // Nothing left to do but stop quietly.
             }
         }
 
@@ -192,7 +193,7 @@ namespace Optimizely.Performance.DotNetCounters.Diagnostics
         {
             try
             {
-                ((ManualResetEventSlim)state).Set();
+                ((ManualResetEventSlim)state!).Set();
             }
             catch
             {

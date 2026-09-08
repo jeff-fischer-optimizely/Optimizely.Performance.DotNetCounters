@@ -9,32 +9,32 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        config: [net472, net6.0]
 
     steps:
       - uses: actions/checkout@v4
 
+      # Every target framework is built and tested in one job. The matrix that used to split
+      # them apart could not test net10.0 at all, and splitting by target buys nothing here:
+      # a single `dotnet build` covers all three, and the tests must run on all three because
+      # the Optimizely internals they reflect over differ between versions.
+      #
+      # net472 needs no separate msbuild invocation. The .NET SDK builds it on Windows, and
+      # the reference assemblies come from the targeting pack below.
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '7.0.x'
+          dotnet-version: |
+            6.0.x
+            10.0.x
 
       - name: Restore
         run: dotnet restore Optimizely.Performance.DotNetCounters.sln
 
-      - name: Build net472 (Optimizely V11)
-        if: matrix.config == 'net472'
-        run: |
-          msbuild Optimizely.Performance.DotNetCounters.sln /p:Configuration=Release /p:TargetFramework=net472
+      - name: Build
+        run: dotnet build Optimizely.Performance.DotNetCounters.sln -c Release --no-restore
 
-      - name: Build net6.0 (Optimizely V12)
-        if: matrix.config == 'net6.0'
-        run: |
-          dotnet build Optimizely.Performance.DotNetCounters.sln -c Release
-
-      - name: Run unit tests (net6.0)
-        if: matrix.config == 'net6.0'
-        run: |
-          dotnet test -c Release
+      # Runs the suite once per target framework. The cache lock locator tests resolve the
+      # real Optimizely assemblies, so a net6.0 pass proves nothing about net10.0 and the
+      # reverse - the type moved assemblies and the field was renamed between them.
+      - name: Test
+        run: dotnet test Optimizely.Performance.DotNetCounters.sln -c Release --no-build --verbosity normal

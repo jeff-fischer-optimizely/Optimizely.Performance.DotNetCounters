@@ -48,6 +48,12 @@ namespace Optimizely.Performance.DotNetCounters.Services
             services.AddSingleton(sp =>
                 new ThreadPoolQueueDelayProbe(sp.GetService<TelemetryClient>(), probeOptions));
 
+            var cacheLockOptions = new CacheLockProbeOptions();
+            configuration.GetSection(CacheLockProbeOptions.SectionName).Bind(cacheLockOptions);
+
+            services.AddSingleton(sp =>
+                new CacheLockProbe(sp.GetService<TelemetryClient>(), cacheLockOptions));
+
             // Configure Event Counter collection
             services.ConfigureTelemetryModule<EventCounterCollectionModule>(
                 (module, options) =>

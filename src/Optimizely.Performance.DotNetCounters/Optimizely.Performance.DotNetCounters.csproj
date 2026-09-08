@@ -22,6 +22,12 @@
     <ContentTargetFolders>content;contentFiles</ContentTargetFolders>
   </PropertyGroup>
 
+  <!-- Lets the tests assert on clamping and other internal behaviour without widening the
+       public API to make it observable. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Optimizely.Performance.DotNetCounters.Tests" />
+  </ItemGroup>
+
   <!-- Include README and key documentation in package -->
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
