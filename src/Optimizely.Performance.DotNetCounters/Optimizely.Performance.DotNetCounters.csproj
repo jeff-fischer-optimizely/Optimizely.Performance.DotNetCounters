@@ -116,6 +116,12 @@
     <PackageReference Include="EPiServer.CMS.Core" Version="12.10.0" />
     <PackageReference Include="EPiServer.Framework" Version="12.10.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <!-- Must be stated explicitly. EPiServer.Framework 12.10.0 drags in Caching.Abstractions
+         1.0.0, whose ICacheEntry has no Size member, but a CMS 12 site runs against the
+         ASP.NET Core 6 shared framework copy, which does. Compiling our ICacheEntry
+         implementation against 1.0.0 would leave a member unimplemented at runtime and the
+         type would fail to load. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
@@ -128,6 +134,8 @@
     <PackageReference Include="EPiServer.CMS.Core" Version="13.0.0" />
     <PackageReference Include="EPiServer.Framework" Version="13.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <!-- Stated explicitly for the same reason as the net6.0 group above. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
