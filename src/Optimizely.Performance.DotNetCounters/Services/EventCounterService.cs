@@ -2,12 +2,14 @@
 using System;
 using System.Linq;
 using EPiServer.Logging;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.EventCounterCollector;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Optimizely.Performance.DotNetCounters.Configuration;
+using Optimizely.Performance.DotNetCounters.Diagnostics;
 
 namespace Optimizely.Performance.DotNetCounters.Services
 {
@@ -33,6 +35,18 @@ namespace Optimizely.Performance.DotNetCounters.Services
 
             // Add Application Insights
             services.AddApplicationInsightsTelemetry();
+
+            // Bound now rather than resolved through IOptions later, because the probe outlives
+            // any scope and has no use for reloaded configuration: changing its interval at
+            // runtime would only make the series it produces inconsistent with itself.
+            var probeOptions = new ThreadPoolProbeOptions();
+            configuration.GetSection(ThreadPoolProbeOptions.SectionName).Bind(probeOptions);
+
+            // Registered here but deliberately not started: sampling before the container is
+            // built would measure a thread pool that is not yet serving requests. The
+            // initialization module starts it once the host is up.
+            services.AddSingleton(sp =>
+                new ThreadPoolQueueDelayProbe(sp.GetService<TelemetryClient>(), probeOptions));
 
             // Configure Event Counter collection
             services.ConfigureTelemetryModule<EventCounterCollectionModule>(

@@ -13,7 +13,7 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
         /// </summary>
         public static List<WindowsPerformanceCounter> GetDefaultWindowsCounters()
         {
-            return new List<WindowsPerformanceCounter>
+            var counters = new List<WindowsPerformanceCounter>
             {
                 // ASP.NET Counters
                 new WindowsPerformanceCounter
@@ -147,9 +147,106 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                 {
                     CategoryName = @"\Process(??APP_WIN32_PROC??)\Handle Count",
                     ReportedName = "Process Handle Count"
+                },
+
+                // SQL Server connection pool.
+                //
+                // Pool exhaustion is the usual end state of a cache problem: entries get
+                // invalidated en masse, every request misses, and they all queue for a
+                // connection. These counters are what distinguish "the database is slow"
+                // from "we ran out of connections to the database", which look identical
+                // from the outside and have nothing in common as fixes.
+                //
+                // The instance name is resolved at startup; see SqlClientCounters.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfPooledConnections"),
+                    ReportedName = "SQL Pooled Connections"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfNonPooledConnections"),
+                    ReportedName = "SQL Non-Pooled Connections"
+                },
+
+                // A sustained hard connect rate means the pool is not holding connections:
+                // each request pays the full TCP and authentication cost. Under steady load
+                // this should settle near zero.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("HardConnectsPerSecond"),
+                    ReportedName = "SQL Hard Connects/Sec"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("HardDisconnectsPerSecond"),
+                    ReportedName = "SQL Hard Disconnects/Sec"
+                },
+
+                // Pool count and pool group count should both be small and flat. Growth means
+                // connection strings are varying at runtime - each variant gets its own pool
+                // with its own Max Pool Size, so the site can exhaust a pool while the totals
+                // still look healthy.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfActiveConnectionPools"),
+                    ReportedName = "SQL Active Connection Pools"
+                },
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfActiveConnectionPoolGroups"),
+                    ReportedName = "SQL Active Connection Pool Groups"
+                },
+
+                // Connections held open by an unfinished distributed transaction.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfStasisConnections"),
+                    ReportedName = "SQL Stasis Connections"
+                },
+
+                // Connections the garbage collector had to recover because nothing disposed
+                // them. Anything other than zero is a leak, and it is the one counter here
+                // that names a defect rather than describing load.
+                new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfReclaimedConnections"),
+                    ReportedName = "SQL Reclaimed Connections"
                 }
             };
+
+            // The four counters that answer "how full is the pool" are only published when
+            // the host opts in; without the switch they read a constant zero rather than
+            // failing, so they are collected only once they can be believed.
+            if (SqlClientCounters.IsDetailEnabled())
+            {
+                counters.Add(new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfActiveConnections"),
+                    ReportedName = "SQL Active Connections"
+                });
+                counters.Add(new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("NumberOfFreeConnections"),
+                    ReportedName = "SQL Free Connections"
+                });
+                counters.Add(new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("SoftConnectsPerSecond"),
+                    ReportedName = "SQL Soft Connects/Sec"
+                });
+                counters.Add(new WindowsPerformanceCounter
+                {
+                    CategoryName = SqlPath("SoftDisconnectsPerSecond"),
+                    ReportedName = "SQL Soft Disconnects/Sec"
+                });
+            }
+
+            return counters;
         }
+
+        private static string SqlPath(string counterName) =>
+            $@"\.NET Data Provider for SqlServer({SqlClientCounters.InstanceNameToken})\{counterName}";
 #endif
 
 #if !NET472
@@ -277,9 +374,106 @@ namespace Optimizely.Performance.DotNetCounters.Configuration
                 {
                     EventSourceName = "Microsoft.AspNetCore.Hosting",
                     CounterName = "failed-requests"
+                },
+
+                // SQL Server connection pool.
+                //
+                // Pool exhaustion is the usual end state of a cache problem: entries get
+                // invalidated en masse, every request misses, and they all queue for a
+                // connection. These counters are what distinguish "the database is slow"
+                // from "we ran out of connections to the database", which look identical
+                // from the outside and have nothing in common as fixes.
+                //
+                // Nothing needs enabling. The counters are created the first time anything
+                // enables the event source, which is exactly what registering them here does.
+                // Unlike the .NET Framework equivalents there is no detail-level switch, so
+                // the full set is available on both Optimizely 12 and 13 - the counter names
+                // and the source name are identical across the SqlClient 3.x and 6.x versions
+                // those two ship with.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-pooled-connections"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-non-pooled-connections"
+                },
+
+                // In-use versus available: the numerator and denominator of pool utilisation.
+                // When free reaches zero and stays there, requests are blocking on the pool
+                // and will fail with a connection timeout that names nothing useful.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-active-connections"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-free-connections"
+                },
+
+                // A sustained hard connect rate means the pool is not holding connections:
+                // each request pays the full TCP and authentication cost. Under steady load
+                // this should settle near zero. Soft connects are pool hits, so the ratio
+                // between the two is the pool's hit rate.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "hard-connects"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "hard-disconnects"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "soft-connects"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "soft-disconnects"
+                },
+
+                // Pool count and pool group count should both be small and flat. Growth means
+                // connection strings are varying at runtime - each variant gets its own pool
+                // with its own Max Pool Size, so the site can exhaust a pool while the totals
+                // still look healthy.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-active-connection-pools"
+                },
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-active-connection-pool-groups"
+                },
+
+                // Connections held open by an unfinished distributed transaction.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-stasis-connections"
+                },
+
+                // Connections the garbage collector had to recover because nothing disposed
+                // them. Anything other than zero is a leak, and it is the one counter here
+                // that names a defect rather than describing load.
+                new EventCounterDefinition
+                {
+                    EventSourceName = SqlClientEventSourceName,
+                    CounterName = "number-of-reclaimed-connections"
                 }
             };
         }
+
+        private const string SqlClientEventSourceName = "Microsoft.Data.SqlClient.EventSource";
 #endif
     }
 }

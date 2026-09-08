@@ -4,8 +4,13 @@ using EPiServer.Framework.Initialization;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
 
+using Optimizely.Performance.DotNetCounters.Diagnostics;
+
 #if NET472
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
+using Optimizely.Performance.DotNetCounters.Configuration;
 using Optimizely.Performance.DotNetCounters.Services;
 #else
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +40,10 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 
         private bool _initialized;
 
+        // Held so Uninitialize can stop it. On V12/V13 the container owns the instance and
+        // this is only a reference to it, not a second one.
+        private ThreadPoolQueueDelayProbe? _threadPoolProbe;
+
 #if !NET472
         // ConfigureContainer runs before logging is available, so its outcome is stashed
         // here and reported from Initialize, which runs once the host is up.
@@ -53,6 +62,11 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
             InitializeFramework(context);
 #else
             ReportCoreResult();
+
+            if (_configureError == null)
+            {
+                StartThreadPoolProbe(context);
+            }
 #endif
 
             _initialized = true;
@@ -85,6 +99,8 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 var service = new PerformanceCounterService();
                 service.Initialize(configuration);
 
+                StartThreadPoolProbe(configuration);
+
                 Log.Information(
                     "Optimizely Performance Counters initialized for .NET Framework 4.7.2 (V11)");
             }
@@ -93,6 +109,34 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 // Don't throw - performance counters are optional - but this must be
                 // loud, or the library silently does nothing for the life of the site.
                 Log.Error("Failed to initialize Optimizely Performance Counters", ex);
+            }
+        }
+
+        /// <remarks>
+        /// There is no container to resolve from on V11, so the probe is built here against the
+        /// active telemetry configuration - the same one the counter collector above reports to.
+        /// A failure to start the probe must not cost the site its counters, so it is caught
+        /// separately from the block that set those up.
+        /// </remarks>
+        private void StartThreadPoolProbe(IConfiguration? configuration)
+        {
+            try
+            {
+                var options = new ThreadPoolProbeOptions();
+                configuration?.GetSection(ThreadPoolProbeOptions.SectionName).Bind(options);
+
+                if (!options.Enabled)
+                {
+                    return;
+                }
+
+                _threadPoolProbe = new ThreadPoolQueueDelayProbe(
+                    new TelemetryClient(TelemetryConfiguration.Active), options);
+                _threadPoolProbe.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to start the thread pool queue delay probe.", ex);
             }
         }
 #endif
@@ -122,6 +166,24 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
             }
         }
 
+        /// <remarks>
+        /// Started from <c>Initialize</c> rather than from container configuration so the first
+        /// sample lands after the host is serving. Resolved rather than constructed, so the
+        /// container disposes the singleton at shutdown even if <c>Uninitialize</c> never runs.
+        /// </remarks>
+        private void StartThreadPoolProbe(InitializationEngine context)
+        {
+            try
+            {
+                _threadPoolProbe = context.Locate.Advanced.GetInstance<ThreadPoolQueueDelayProbe>();
+                _threadPoolProbe.Start();
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to start the thread pool queue delay probe.", ex);
+            }
+        }
+
         private void ReportCoreResult()
         {
             if (_configureError != null)
@@ -142,7 +204,10 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 
         public void Uninitialize(InitializationEngine context)
         {
-            // No cleanup needed
+            // The probe's thread is a background thread and cannot hold up shutdown on its own,
+            // but stopping it here keeps it from sampling a pool that is being torn down.
+            _threadPoolProbe?.Dispose();
+            _threadPoolProbe = null;
         }
     }
 }

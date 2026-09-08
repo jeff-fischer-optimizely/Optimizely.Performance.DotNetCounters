@@ -50,18 +50,27 @@ namespace Optimizely.Performance.DotNetCounters.Services
                 ? options.WindowsCounters
                 : DefaultCounters.GetDefaultWindowsCounters();
 
+            // Resolved once. The instance name cannot change while the process lives, and
+            // building it involves reflection over the entry assembly.
+            var sqlInstance = SqlClientCounters.ResolveInstanceName();
+
             foreach (var counter in counters)
             {
+                // Applied to configured counters as well as defaults, so a site that lists
+                // its own connection pool counters in web.config can use the same token.
+                var path = counter.CategoryName?.Replace(
+                    SqlClientCounters.InstanceNameToken, sqlInstance);
+
                 try
                 {
                     _module.Counters.Add(new PerformanceCounterCollectionRequest(
-                        counter.CategoryName,
+                        path,
                         counter.ReportedName));
                 }
                 catch (Exception ex)
                 {
                     // Log but continue - some counters may not be available
-                    Log.Warning($"Failed to add performance counter {counter.CategoryName}", ex);
+                    Log.Warning($"Failed to add performance counter {path}", ex);
                 }
             }
 
