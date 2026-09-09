@@ -2,14 +2,11 @@
 using System;
 using System.Linq;
 using EPiServer.Logging;
-using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.EventCounterCollector;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Optimizely.Performance.DotNetCounters.Configuration;
-using Optimizely.Performance.DotNetCounters.Diagnostics;
 
 namespace Optimizely.Performance.DotNetCounters.Services
 {
@@ -29,49 +26,42 @@ namespace Optimizely.Performance.DotNetCounters.Services
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            // Bind configuration
-            services.Configure<PerformanceCounterOptions>(
-                configuration.GetSection(PerformanceCounterOptions.SectionName));
+            var section = configuration.GetSection(PerformanceCounterOptions.SectionName);
 
-            // Add Application Insights
+            // Registered so that the site can inject IOptions<PerformanceCounterOptions> and
+            // read the same settings this method acts on.
+            services.Configure<PerformanceCounterOptions>(section);
+
+            // ...and bound a second time, here, for our own use. The obvious alternative -
+            // resolving IOptions inside the callback below - needs a service provider, and the
+            // only one available at that point is one built from this collection, which is a
+            // whole parallel container: a second copy of every singleton the site resolves
+            // through it, plus a disposable provider nobody disposes.
+            //
+            // The cost of reading it here instead is that a later services.Configure or
+            // PostConfigure of the same options is not seen by the counter list. Nothing in
+            // this package does that, and the list is only read once at startup anyway.
+            var perfOptions = new PerformanceCounterOptions();
+            section.Bind(perfOptions);
+
+            // Added whether or not the counters are enabled. Turning this package off should
+            // not also turn off the site's Application Insights, which other things use.
             services.AddApplicationInsightsTelemetry();
 
-            // Bound now rather than resolved through IOptions later, because the probe outlives
-            // any scope and has no use for reloaded configuration: changing its interval at
-            // runtime would only make the series it produces inconsistent with itself.
-            var probeOptions = new ThreadPoolProbeOptions();
-            configuration.GetSection(ThreadPoolProbeOptions.SectionName).Bind(probeOptions);
+            if (!perfOptions.Enabled)
+            {
+                return services;
+            }
 
-            // Registered here but deliberately not started: sampling before the container is
-            // built would measure a thread pool that is not yet serving requests. The
-            // initialization module starts it once the host is up.
-            services.AddSingleton(sp =>
-                new ThreadPoolQueueDelayProbe(sp.GetService<TelemetryClient>(), probeOptions));
-
-            var cacheLockOptions = new CacheLockProbeOptions();
-            configuration.GetSection(CacheLockProbeOptions.SectionName).Bind(cacheLockOptions);
-
-            services.AddSingleton(sp =>
-                new CacheLockProbe(sp.GetService<TelemetryClient>(), cacheLockOptions));
+            // Use configured counters or defaults
+            var counters = perfOptions.EventCounters?.Any() == true
+                ? perfOptions.EventCounters
+                : DefaultCounters.GetDefaultEventCounters();
 
             // Configure Event Counter collection
             services.ConfigureTelemetryModule<EventCounterCollectionModule>(
                 (module, options) =>
                 {
-                    var serviceProvider = services.BuildServiceProvider();
-                    var perfOptions = serviceProvider.GetService<IOptions<PerformanceCounterOptions>>()?.Value
-                        ?? new PerformanceCounterOptions();
-
-                    if (!perfOptions.Enabled)
-                    {
-                        return;
-                    }
-
-                    // Use configured counters or defaults
-                    var counters = perfOptions.EventCounters?.Any() == true
-                        ? perfOptions.EventCounters
-                        : DefaultCounters.GetDefaultEventCounters();
-
                     foreach (var counter in counters)
                     {
                         try

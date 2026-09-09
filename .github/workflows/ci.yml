@@ -15,16 +15,25 @@ jobs:
 
       # Every target framework is built and tested in one job. The matrix that used to split
       # them apart could not test net10.0 at all, and splitting by target buys nothing here:
-      # a single `dotnet build` covers all three, and the tests must run on all three because
-      # the Optimizely internals they reflect over differ between versions.
+      # a single `dotnet build` covers them all, and the tests must run on all of them because
+      # the counter definitions under test are chosen by target framework.
       #
       # net472 needs no separate msbuild invocation. The .NET SDK builds it on Windows, and
       # the reference assemblies come from the targeting pack below.
+      #
+      # Every runtime the package targets is installed, not just the newest. The SDK can
+      # *build* net6.0 through net9.0 from the .NET 10 SDK alone, but `dotnet test` executes
+      # each test assembly on its own runtime, so a missing runtime fails the test step rather
+      # than the build step. 7.0 and 9.0 are out of support upstream; they are here because
+      # the package still ships assets for them.
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
             6.0.x
+            7.0.x
+            8.0.x
+            9.0.x
             10.0.x
 
       - name: Restore
@@ -33,8 +42,8 @@ jobs:
       - name: Build
         run: dotnet build Optimizely.Performance.DotNetCounters.sln -c Release --no-restore
 
-      # Runs the suite once per target framework. The cache lock locator tests resolve the
-      # real Optimizely assemblies, so a net6.0 pass proves nothing about net10.0 and the
-      # reverse - the type moved assemblies and the field was renamed between them.
+      # Runs the suite once per target framework. Windows performance counters compile only
+      # on net472 and EventCounters only off it, so a pass on one framework says nothing
+      # about the definitions the others ship.
       - name: Test
         run: dotnet test Optimizely.Performance.DotNetCounters.sln -c Release --no-build --verbosity normal

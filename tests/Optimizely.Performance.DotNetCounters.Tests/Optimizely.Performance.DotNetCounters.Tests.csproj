@@ -1,14 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Matches the library. The reflection under test resolves a type whose shape differs
-         between Optimizely 12 and 13, so it has to be exercised on both runtimes rather than
-         on whichever one happens to be convenient. -->
-    <TargetFrameworks>net472;net6.0;net10.0</TargetFrameworks>
+    <!-- Matches the library. The counter definitions differ by target framework - Windows
+         performance counters on net472, EventCounters everywhere else - so each set has to be
+         checked on a runtime that actually compiles it. -->
+    <TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- Same setting and the same reason as the library - see the comment there. This project
+         inherits the whole EPiServer dependency graph through its project reference, so without
+         it every restore of the tests repeats the library's transitive audit findings. -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
 
   <ItemGroup>

@@ -3,18 +3,13 @@ using EPiServer.Framework;
 using EPiServer.Framework.Initialization;
 using EPiServer.Logging;
 using EPiServer.ServiceLocation;
-
-using Optimizely.Performance.DotNetCounters.Diagnostics;
-
-#if NET472
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
-using Optimizely.Performance.DotNetCounters.Configuration;
 using Optimizely.Performance.DotNetCounters.Services;
-#else
+
+#if !NET472
+using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
-using Optimizely.Performance.DotNetCounters.Services;
 #endif
 
 namespace Optimizely.Performance.DotNetCounters.Initialization
@@ -40,22 +35,18 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
 
         private bool _initialized;
 
-        // Held so Uninitialize can stop it. On V12/V13 the container owns the instance and
-        // this is only a reference to it, not a second one.
-        private ThreadPoolQueueDelayProbe? _threadPoolProbe;
-
-#if !NET472
-        // V12/V13 only: the lock this samples does not exist on V11, whose cache is
-        // HttpRuntime.Cache rather than MemoryObjectInstanceCache.
-        private CacheLockProbe? _cacheLockProbe;
-#endif
-
 #if !NET472
         // ConfigureContainer runs before logging is available, so its outcome is stashed
         // here and reported from Initialize, which runs once the host is up.
         private Exception? _configureError;
+        private bool _configurationMissing;
 #endif
 
+        /// <summary>
+        /// On .NET Framework, starts collection. Elsewhere the work happened in
+        /// <see cref="ConfigureContainer"/> and this reports its outcome, now that the
+        /// host's logging pipeline exists.
+        /// </summary>
         public void Initialize(InitializationEngine context)
         {
             if (_initialized)
@@ -68,17 +59,15 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
             InitializeFramework(context);
 #else
             ReportCoreResult();
-
-            if (_configureError == null)
-            {
-                StartThreadPoolProbe(context);
-                StartCacheLockProbe(context);
-            }
 #endif
 
             _initialized = true;
         }
 
+        /// <summary>
+        /// Registers the counter services on .NET 6 and later. A no-op on .NET Framework,
+        /// which has no service collection to register into at this point.
+        /// </summary>
         public void ConfigureContainer(ServiceConfigurationContext context)
         {
 #if !NET472
@@ -106,8 +95,6 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 var service = new PerformanceCounterService();
                 service.Initialize(configuration);
 
-                StartThreadPoolProbe(configuration);
-
                 Log.Information(
                     "Optimizely Performance Counters initialized for .NET Framework 4.7.2 (V11)");
             }
@@ -118,39 +105,6 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 Log.Error("Failed to initialize Optimizely Performance Counters", ex);
             }
         }
-
-        /// <remarks>
-        /// There is no container to resolve from on V11, so the probe is built here against the
-        /// active telemetry configuration - the same one the counter collector above reports to.
-        /// A failure to start the probe must not cost the site its counters, so it is caught
-        /// separately from the block that set those up.
-        /// </remarks>
-        private void StartThreadPoolProbe(IConfiguration? configuration)
-        {
-            try
-            {
-                var options = new ThreadPoolProbeOptions();
-
-                // appSettings first, so the probe is configurable on a site that has no
-                // IConfiguration at all - which is most V11 sites. Anything the site does
-                // register wins, since that is the more deliberate of the two.
-                ThreadPoolProbeOptions.BindAppSettings(options);
-                configuration?.GetSection(ThreadPoolProbeOptions.SectionName).Bind(options);
-
-                if (!options.Enabled)
-                {
-                    return;
-                }
-
-                _threadPoolProbe = new ThreadPoolQueueDelayProbe(
-                    new TelemetryClient(TelemetryConfiguration.Active), options);
-                _threadPoolProbe.Start();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to start the thread pool queue delay probe.", ex);
-            }
-        }
 #endif
 
 #if !NET472
@@ -158,17 +112,16 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
         {
             try
             {
-                // Get IConfiguration from the service collection
-                var serviceProvider = context.Services.BuildServiceProvider();
-                var configuration = serviceProvider.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
+                var configuration = FindConfiguration(context.Services);
+
+                if (configuration == null)
+                {
+                    _configurationMissing = true;
+                    return;
+                }
 
                 // Register performance counter services
                 context.Services.AddOptimizelyPerformanceCounters(configuration);
-
-                // Cache dependency instrumentation. Takes the context rather than the service
-                // collection because it has to defer its work to ConfigurationComplete, which
-                // is the only point at which Optimizely 12's cache registrations exist.
-                context.AddOptimizelyCacheInstrumentation(configuration);
             }
             catch (Exception ex)
             {
@@ -178,40 +131,20 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
             }
         }
 
-        /// <remarks>
-        /// Started from <c>Initialize</c> rather than from container configuration so the first
-        /// sample lands after the host is serving. Resolved rather than constructed, so the
-        /// container disposes the singleton at shutdown even if <c>Uninitialize</c> never runs.
-        /// </remarks>
-        private void StartThreadPoolProbe(InitializationEngine context)
-        {
-            try
-            {
-                _threadPoolProbe = context.Locate.Advanced.GetInstance<ThreadPoolQueueDelayProbe>();
-                _threadPoolProbe.Start();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to start the thread pool queue delay probe.", ex);
-            }
-        }
-
-        /// <remarks>
-        /// Started after the cache exists, because the probe resolves the lock once at start
-        /// and a null field would look to it like an incompatible Optimizely version.
-        /// </remarks>
-        private void StartCacheLockProbe(InitializationEngine context)
-        {
-            try
-            {
-                _cacheLockProbe = context.Locate.Advanced.GetInstance<CacheLockProbe>();
-                _cacheLockProbe.Start();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Failed to start the cache lock probe.", ex);
-            }
-        }
+        // Reads the descriptor rather than calling BuildServiceProvider. Building a provider
+        // here would construct a second, parallel container from the same descriptors: every
+        // singleton resolved through it becomes a duplicate of the one the site will use, and
+        // the provider itself is disposable and would never be disposed. It is also the reason
+        // Log above is a property - nothing can be resolved this early.
+        //
+        // The generic host registers its configuration with AddSingleton(IConfiguration), an
+        // instance registration, which is what makes reading it back possible at all. A host
+        // that registered it by factory cannot be read here, and the caller says so rather than
+        // guessing.
+        private static IConfiguration? FindConfiguration(IServiceCollection services) =>
+            services
+                .LastOrDefault(descriptor => descriptor.ServiceType == typeof(IConfiguration))?
+                .ImplementationInstance as IConfiguration;
 
         private void ReportCoreResult()
         {
@@ -223,25 +156,34 @@ namespace Optimizely.Performance.DotNetCounters.Initialization
                 return;
             }
 
-#if NET6_0
-            Log.Information("Optimizely Performance Counters initialized for .NET 6 (V12)");
-#elif NET10_0
-            Log.Information("Optimizely Performance Counters initialized for .NET 10 (V13)");
-#endif
+            if (_configurationMissing)
+            {
+                // Same reasoning as the error above: without configuration nothing was
+                // registered, and a silent no-op is the outcome this package most needs to
+                // avoid. Named precisely, because the fix is a host wiring change and not a
+                // settings change.
+                Log.Error(
+                    "Optimizely Performance Counters could not start: no IConfiguration was " +
+                    "registered as an instance in the service collection when ConfigureContainer " +
+                    "ran, so appsettings.json could not be read. No counters are being collected.");
+                return;
+            }
+
+            // Read at run time rather than from a NET6_0/NET10_0 compile symbol. Those symbols
+            // named two of the six target frameworks, so the line disappeared entirely on the
+            // rest, and they describe what this assembly was compiled for rather than what the
+            // site is running on - which are different things the moment a build rolls forward.
+            Log.Information(
+                $"Optimizely Performance Counters initialized on {RuntimeInformation.FrameworkDescription}");
         }
 #endif
 
+        /// <summary>
+        /// Nothing to tear down. Collection is owned by the Application Insights telemetry
+        /// modules, which the host disposes with its own service provider.
+        /// </summary>
         public void Uninitialize(InitializationEngine context)
         {
-            // The probe's thread is a background thread and cannot hold up shutdown on its own,
-            // but stopping it here keeps it from sampling a pool that is being torn down.
-            _threadPoolProbe?.Dispose();
-            _threadPoolProbe = null;
-
-#if !NET472
-            _cacheLockProbe?.Dispose();
-            _cacheLockProbe = null;
-#endif
         }
     }
 }

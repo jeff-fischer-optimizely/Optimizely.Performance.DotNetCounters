@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0;net10.0</TargetFrameworks>
+    <!--
+      One target framework per runtime Optimizely supports, rather than the two ends of the
+      range. A net6.0 asset does roll forward onto .NET 9, but it brings its .NET 6 era
+      Microsoft.Extensions assemblies with it, and the site then has to unify them back up.
+      Building each framework means every host resolves the assemblies that match its runtime.
+    -->
+    <TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -13,6 +19,25 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>$(NoWarn);NU1603;NU1605</NoWarn>
+    <!--
+      Audit what this package chooses, not what Optimizely chooses. Every NU1902/NU1903 this
+      restore produced - Newtonsoft.Json, ImageSharp, MailKit, MimeKit, Azure.Identity, the
+      IdentityModel and SqlClient families - is transitive through EPiServer.CMS.Core and
+      EPiServer.Framework. Not one of them is referenced or loaded by any code here.
+
+      They appear because the EPiServer versions above are deliberately floors rather than
+      current: 11.1.0, 12.10.0 and 13.0.0 are the oldest releases this package supports, and the
+      oldest CMS naturally drags the oldest dependency graph with it. Raising them to silence the
+      audit would raise the minimum Optimizely version a site needs in order to install this,
+      which is the opposite of what those floors are for. Pinning the individual packages instead
+      would put a version floor for ImageSharp and MailKit into our own .nuspec - this package has
+      no business dictating either to a CMS site.
+
+      A real site restores against its own CMS version and NuGet unification gives it that graph,
+      not this one. 'direct' keeps the audit on the references this project actually declares,
+      where a finding would be ours to fix.
+    -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
     <Version>1.0.0</Version>
     <PackageVersion>1.0.0</PackageVersion>
     <PackageTags>optimizely;episerver;performance;counters;monitoring;application-insights;telemetry</PackageTags>
@@ -21,12 +46,6 @@
     <IncludeContentInPack>true</IncludeContentInPack>
     <ContentTargetFolders>content;contentFiles</ContentTargetFolders>
   </PropertyGroup>
-
-  <!-- Lets the tests assert on clamping and other internal behaviour without widening the
-       public API to make it observable. -->
-  <ItemGroup>
-    <InternalsVisibleTo Include="Optimizely.Performance.DotNetCounters.Tests" />
-  </ItemGroup>
 
   <!-- Include README and key documentation in package -->
   <ItemGroup>
@@ -112,39 +131,49 @@
     <Reference Include="System.Web" />
   </ItemGroup>
 
-  <!-- .NET 6 packages (V12) -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+  <!--
+    Version floors for the .NET targets, one pair per framework.
+
+    EPiServerVersion is the oldest CMS that runs on that framework: CMS 12 spans .NET 6
+    through 9, CMS 13 is .NET 10 only. ExtensionsVersion matches the framework's major,
+    because the Microsoft.Extensions packages version in lockstep with the runtime and
+    asking for 6.0.0 on a .NET 9 host would put a down-level assembly in its graph for no
+    reason. Both are floors and not pins - a site on a newer CMS or a newer Extensions
+    keeps its own through NuGet unification.
+  -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <EPiServerVersion>12.10.0</EPiServerVersion>
+    <ExtensionsVersion>6.0.0</ExtensionsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <EPiServerVersion>12.10.0</EPiServerVersion>
+    <ExtensionsVersion>7.0.0</ExtensionsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <EPiServerVersion>12.10.0</EPiServerVersion>
+    <ExtensionsVersion>8.0.0</ExtensionsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <EPiServerVersion>12.10.0</EPiServerVersion>
+    <ExtensionsVersion>9.0.0</ExtensionsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <EPiServerVersion>13.0.0</EPiServerVersion>
+    <ExtensionsVersion>10.0.0</ExtensionsVersion>
+  </PropertyGroup>
+
+  <!-- .NET 6+ packages (V12 and V13) -->
+  <ItemGroup Condition="'$(TargetFramework)' != 'net472'">
     <!-- Ordinary references, deliberately NOT PrivateAssets="all": CMS 12's type
          scanner only loads assemblies whose dependency graph contains an EPiServer
          package, so hiding these from the nuspec makes our [InitializableModule]
-         invisible and the library silently does nothing. The version is a floor,
-         not a pin - NuGet unification means a host on a newer CMS keeps its own. -->
-    <PackageReference Include="EPiServer.CMS.Core" Version="12.10.0" />
-    <PackageReference Include="EPiServer.Framework" Version="12.10.0" />
+         invisible and the library silently does nothing. -->
+    <PackageReference Include="EPiServer.CMS.Core" Version="$(EPiServerVersion)" />
+    <PackageReference Include="EPiServer.Framework" Version="$(EPiServerVersion)" />
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
-    <!-- Must be stated explicitly. EPiServer.Framework 12.10.0 drags in Caching.Abstractions
-         1.0.0, whose ICacheEntry has no Size member, but a CMS 12 site runs against the
-         ASP.NET Core 6 shared framework copy, which does. Compiling our ICacheEntry
-         implementation against 1.0.0 would leave a member unimplemented at runtime and the
-         type would fail to load. -->
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0" />
-  </ItemGroup>
-
-  <!-- .NET 10 packages (V13) -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <!-- Ordinary references; see the net6.0 group above for why these must stay
-         visible in the nuspec. -->
-    <PackageReference Include="EPiServer.CMS.Core" Version="13.0.0" />
-    <PackageReference Include="EPiServer.Framework" Version="13.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
-    <!-- Stated explicitly for the same reason as the net6.0 group above. -->
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(ExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(ExtensionsVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="$(ExtensionsVersion)" />
   </ItemGroup>
 
 </Project>
