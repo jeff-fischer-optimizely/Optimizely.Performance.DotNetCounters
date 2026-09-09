@@ -21,6 +21,10 @@ namespace Optimizely.Performance.DotNetCounters.Services
         private readonly PerformanceCollectorModule _module;
         private bool _isInitialized;
 
+        /// <summary>
+        /// Creates the service. No counters are read until
+        /// <see cref="Initialize"/> is called.
+        /// </summary>
         public PerformanceCounterService()
         {
             _module = new PerformanceCollectorModule();
@@ -50,27 +54,18 @@ namespace Optimizely.Performance.DotNetCounters.Services
                 ? options.WindowsCounters
                 : DefaultCounters.GetDefaultWindowsCounters();
 
-            // Resolved once. The instance name cannot change while the process lives, and
-            // building it involves reflection over the entry assembly.
-            var sqlInstance = SqlClientCounters.ResolveInstanceName();
-
             foreach (var counter in counters)
             {
-                // Applied to configured counters as well as defaults, so a site that lists
-                // its own connection pool counters in web.config can use the same token.
-                var path = counter.CategoryName?.Replace(
-                    SqlClientCounters.InstanceNameToken, sqlInstance);
-
                 try
                 {
                     _module.Counters.Add(new PerformanceCounterCollectionRequest(
-                        path,
+                        counter.CategoryName,
                         counter.ReportedName));
                 }
                 catch (Exception ex)
                 {
                     // Log but continue - some counters may not be available
-                    Log.Warning($"Failed to add performance counter {path}", ex);
+                    Log.Warning($"Failed to add performance counter {counter.CategoryName}", ex);
                 }
             }
 
@@ -134,6 +129,9 @@ namespace Optimizely.Performance.DotNetCounters.Services
     /// </summary>
     public class PerformanceCountersConfigSection : ConfigurationSection
     {
+        /// <summary>
+        /// Whether counters are collected at all. Defaults to <c>true</c>.
+        /// </summary>
         [ConfigurationProperty("enabled", DefaultValue = true)]
         public bool Enabled
         {
@@ -141,6 +139,11 @@ namespace Optimizely.Performance.DotNetCounters.Services
             set => this["enabled"] = value;
         }
 
+        /// <summary>
+        /// Opt in to collection under IIS Express, which Application Insights otherwise
+        /// refuses. Useful for local development; leave <c>false</c> in production, where
+        /// the site runs under full IIS.
+        /// </summary>
         [ConfigurationProperty("enableIISExpressPerformanceCounters", DefaultValue = false)]
         public bool EnableIISExpressPerformanceCounters
         {
@@ -148,6 +151,11 @@ namespace Optimizely.Performance.DotNetCounters.Services
             set => this["enableIISExpressPerformanceCounters"] = value;
         }
 
+        /// <summary>
+        /// The counters to collect. Naming any counter here <em>replaces</em> the built-in
+        /// defaults rather than adding to them, so this list has to carry every default
+        /// that should be kept.
+        /// </summary>
         [ConfigurationProperty("counters")]
         [ConfigurationCollection(typeof(PerformanceCounterElementCollection))]
         public PerformanceCounterElementCollection Counters
@@ -158,21 +166,34 @@ namespace Optimizely.Performance.DotNetCounters.Services
         }
     }
 
+    /// <summary>
+    /// The <c>&lt;counters&gt;</c> collection of a
+    /// <see cref="PerformanceCountersConfigSection"/>.
+    /// </summary>
     public class PerformanceCounterElementCollection : ConfigurationElementCollection
     {
+        /// <inheritdoc />
         protected override ConfigurationElement CreateNewElement()
         {
             return new PerformanceCounterElement();
         }
 
+        /// <inheritdoc />
         protected override object GetElementKey(ConfigurationElement element)
         {
             return ((PerformanceCounterElement)element).CategoryName;
         }
     }
 
+    /// <summary>
+    /// A single <c>&lt;add&gt;</c> element naming one Windows performance counter.
+    /// </summary>
     public class PerformanceCounterElement : ConfigurationElement
     {
+        /// <summary>
+        /// The full perfmon path, for example
+        /// <c>\ASP.NET Applications(__Total__)\Requests/Sec</c>.
+        /// </summary>
         [ConfigurationProperty("categoryName", IsRequired = true)]
         public string CategoryName
         {
@@ -180,6 +201,9 @@ namespace Optimizely.Performance.DotNetCounters.Services
             set => this["categoryName"] = value;
         }
 
+        /// <summary>
+        /// The name the counter is reported under in Application Insights.
+        /// </summary>
         [ConfigurationProperty("reportedName", IsRequired = true)]
         public string ReportedName
         {
@@ -187,6 +211,10 @@ namespace Optimizely.Performance.DotNetCounters.Services
             set => this["reportedName"] = value;
         }
 
+        /// <summary>
+        /// Optional instance to read, for counters whose category is instanced. Left unset,
+        /// the instance embedded in <see cref="CategoryName"/> applies.
+        /// </summary>
         [ConfigurationProperty("instanceName", IsRequired = false)]
         public string? InstanceName
         {

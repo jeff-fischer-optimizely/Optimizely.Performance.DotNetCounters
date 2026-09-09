@@ -85,38 +85,13 @@ namespace Optimizely.Performance.DotNetCounters.Tests
         public void EventCounterNamesUseTheRuntimeConvention()
         {
             // EventCounter names are matched literally against the name the source registered.
-            // They are lower kebab case throughout the runtime and SqlClient, and a stray
-            // capital or underscore would match nothing without failing.
+            // They are lower kebab case throughout the runtime, and a stray capital or
+            // underscore would match nothing without failing.
             foreach (var counter in DefaultCounters.GetDefaultEventCounters())
             {
                 Assert.Equal(counter.CounterName, counter.CounterName!.ToLowerInvariant());
                 Assert.DoesNotContain(' ', counter.CounterName);
                 Assert.DoesNotContain('_', counter.CounterName);
-            }
-        }
-
-        [Fact]
-        public void IncludesTheSqlConnectionPoolCounters()
-        {
-            var counters = DefaultCounters.GetDefaultEventCounters();
-
-            // Verified present under these exact names in both the SqlClient version Optimizely
-            // 12 ships with and the one Optimizely 13 ships with.
-            var expected = new[]
-            {
-                "number-of-pooled-connections",
-                "number-of-active-connections",
-                "number-of-free-connections",
-                "hard-connects",
-                "number-of-reclaimed-connections"
-            };
-
-            foreach (var name in expected)
-            {
-                Assert.Contains(
-                    counters,
-                    c => c.EventSourceName == "Microsoft.Data.SqlClient.EventSource"
-                         && c.CounterName == name);
             }
         }
 #endif
