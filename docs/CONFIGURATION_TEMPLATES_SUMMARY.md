@@ -207,7 +207,10 @@ Optimizely.Performance.DotNetCounters.1.0.0.nupkg
 ├── lib/
 │   ├── net472/*.dll
 │   ├── net6.0/*.dll
-│   └── net8.0/*.dll
+│   ├── net7.0/*.dll
+│   ├── net8.0/*.dll
+│   ├── net9.0/*.dll
+│   └── net10.0/*.dll
 ├── content/App_Data/Optimizely.PerformanceCounters/
 │   ├── V11/ (3 templates)
 │   ├── V12-V13/ (5 templates)

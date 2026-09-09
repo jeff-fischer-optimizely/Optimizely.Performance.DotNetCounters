@@ -13,8 +13,14 @@ Optimizely.Performance.DotNetCounters.1.0.0.nupkg
 │   │   └── Optimizely.Performance.DotNetCounters.dll     (.NET Framework build)
 │   ├── net6.0/
 │   │   └── Optimizely.Performance.DotNetCounters.dll     (.NET 6 build)
-│   └── net8.0/
-│       └── Optimizely.Performance.DotNetCounters.dll     (.NET 8 build)
+│   ├── net7.0/
+│   │   └── Optimizely.Performance.DotNetCounters.dll     (.NET 7 build)
+│   ├── net8.0/
+│   │   └── Optimizely.Performance.DotNetCounters.dll     (.NET 8 build)
+│   ├── net9.0/
+│   │   └── Optimizely.Performance.DotNetCounters.dll     (.NET 9 build)
+│   └── net10.0/
+│       └── Optimizely.Performance.DotNetCounters.dll     (.NET 10 build)
 │
 ├── content/
 │   └── App_Data/
@@ -194,7 +200,7 @@ The package **does not** auto-detect Optimizely version because:
 - Templates are organized by version folder (V11/ vs V12-V13/)
 
 Instead, developers self-select based on:
-- Project target framework (net472 → V11, net6.0 → V12, net8.0 → V13)
+- Project target framework (net472 → V11, net6.0 through net9.0 → V12, net10.0 → V13)
 - Folder structure makes it obvious which to use
 
 ## Environment-Specific Configuration

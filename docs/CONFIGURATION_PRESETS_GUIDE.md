@@ -20,8 +20,9 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V11/`
 
 | File | Purpose | Counters |
 |------|---------|----------|
-| `web.config.xml` | Complete configuration for all environments | 28 counters |
+| `Optimizely.PerformanceCounters.config` | Complete configuration for all environments. Added to the **project root**, not to this folder, because `web.config` references it by `configSource` and that path is relative to the site root | 34 counters |
 | `web.Development.config` | Transform to disable counters in development | Transform only |
+| `web.config.snippet.xml` | The `<configSections>` and `<optimizely>` elements to paste into `web.config` | Reference only |
 
 ### Optimizely V12/V13 (.NET 6+)
 
@@ -29,7 +30,7 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V12-V13/`
 
 | File | Purpose | Counters |
 |------|---------|----------|
-| `appsettings.json` | Complete configuration for all environments | 41 counters |
+| `appsettings.json` | Complete configuration for all environments | 39 counters |
 | `appsettings.Development.json` | Override to disable counters in development | Override only |
 
 ## Counter Categories
@@ -46,12 +47,25 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V12-V13/`
 
 **Why These Matter**: Request queue buildup indicates thread pool starvation or slow processing. High execution times or failures point to application issues.
 
-#### ASP.NET Cache Performance (3 counters)
+#### ASP.NET Cache Performance (9 counters)
 - **Cache Total Entries** - Items in cache
 - **Cache Total Hits** - Successful cache retrievals
 - **Cache Total Misses** - Cache misses
+- **Cache API Entries** - Items inserted through `HttpRuntime.Cache`
+- **Cache API Trims** - API entries evicted under memory pressure
+- **Cache Total Trims** - All entries evicted under memory pressure
+- **Cache API Turnover Rate** - Additions and removals per second
+- **Cache % Machine Memory Limit Used** - Pressure against the machine limit
+- **Cache % Process Memory Limit Used** - Pressure against the process limit
 
 **Why These Matter**: Cache hit ratio directly impacts performance. Low hit rates mean more database queries and slower responses.
+
+The "API" counters are the interesting half on an Optimizely site: EPiServer's `HttpRuntimeCache`
+inserts through `HttpRuntime.Cache`, so they track the content cache specifically, while the
+"Total" counters add ASP.NET's own output and compiled-page caches. A rising trim count means
+ASP.NET is evicting to relieve memory pressure, and because EPiServer hangs entries off master
+keys, one trim can cascade far beyond the entries ASP.NET actually chose to drop. Read next to
+**% Process Memory Limit Used**, that failure mode stops being invisible.
 
 #### CLR Memory (9 counters)
 - **# Bytes in all Heaps** - Total managed memory
@@ -153,25 +167,36 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V12-V13/`
 
 ### V11 Setup
 
-1. Open `App_Data/Optimizely.PerformanceCounters/V11/web.config.xml`
-2. Copy the entire configuration
-3. Merge into your `web.config`:
+Installing the package already put `Optimizely.PerformanceCounters.config` — the counter list
+itself — in your project root. The counters do not live in `web.config`; all `web.config` needs is
+the three-element wiring that points at that file, which is a one-time edit that survives every
+subsequent package upgrade.
+
+1. Open `App_Data/Optimizely.PerformanceCounters/V11/web.config.snippet.xml`
+2. Merge its three elements into your `web.config`:
    ```xml
    <configuration>
+     <!-- Must be the first element inside <configuration> -->
      <configSections>
-       <!-- Copy configSections entries -->
+       <sectionGroup name="optimizely">
+         <section name="performanceCounters"
+                  type="Optimizely.Performance.DotNetCounters.Services.PerformanceCountersConfigSection, Optimizely.Performance.DotNetCounters" />
+       </sectionGroup>
      </configSections>
-     
+
      <optimizely>
-       <!-- Copy optimizely section -->
+       <!-- configSource is relative to the site root, which is where the file was added -->
+       <performanceCounters configSource="Optimizely.PerformanceCounters.config" />
      </optimizely>
-     
+
      <applicationInsights>
-       <!-- Update with your key -->
        <InstrumentationKey>YOUR-KEY-HERE</InstrumentationKey>
      </applicationInsights>
    </configuration>
    ```
+3. Edit `Optimizely.PerformanceCounters.config` if you want a different counter list. Read the
+   note under [Performance Impact](#performance-impact) first: naming counters replaces the
+   built-in defaults rather than adding to them.
 
 **To Disable in Development**:
 - Copy `web.Development.config` to your project as `web.Debug.config`
@@ -203,8 +228,24 @@ Located in: `App_Data/Optimizely.PerformanceCounters/V12-V13/`
 
 | Configuration | Counter Count | Overhead | Recommended For |
 |--------------|---------------|----------|-----------------|
-| V11 Complete | 28 | ~0.5-1% CPU | All environments |
-| V12/V13 Complete | 41 | ~0.5-1% CPU | All environments |
+| V11 built-in defaults | 23 | ~0.5-1% CPU | Sites that configure nothing |
+| V11 Complete (template) | 34 | ~0.5-1% CPU | All environments |
+| V12/V13 built-in defaults | 23 | ~0.5-1% CPU | Sites that configure nothing |
+| V12/V13 Complete (template) | 39 | ~0.5-1% CPU | All environments |
+
+Two counts, because there are two things being counted. The **defaults** are compiled into
+`DefaultCounters.cs` and are what a site collects when it names no counters of its own — 23 on
+either side of the .NET Framework boundary, deliberately the same coverage. The **templates** are
+the files this package copies into the project, and each is a superset of the defaults for its
+version: V11 adds eleven (exception rate, cumulative contentions, per-generation heap sizes, CPU
+and private bytes, rejected and failed requests, cache hits and misses), and V12/V13 add sixteen
+(the whole Kestrel and `System.Net.Http` event sources — twelve between them — plus
+`gc-fragmentation`, `poh-size`, `il-bytes-jitted` and `methods-jitted-count`, none of which have a
+.NET Framework equivalent).
+
+Superset is the important word. Naming any counter at all *replaces* the defaults rather than
+adding to them, so a template that omitted one would silently cost you that counter — which is
+exactly what the V11 template used to do with the six cache memory-pressure counters.
 
 **Collection Frequency**: 60 seconds (controlled by Application Insights)
 

@@ -36,10 +36,11 @@ OptiDotNetCounters/
 ├── examples/                                  📋 Configuration templates
 │   ├── README_AFTER_INSTALL.md               Quick start (shown after install)
 │   ├── V11/                                  (.NET Framework 4.7.2)
-│   │   ├── web.config.xml                    Complete config - 28 counters
-│   │   └── web.Development.config            Transform to disable
+│   │   ├── Optimizely.PerformanceCounters.config  Complete config - 34 counters
+│   │   ├── web.Development.config            Transform to disable
+│   │   └── web.config.snippet.xml            web.config wiring to paste
 │   ├── V12-V13/                              (.NET 6+)
-│   │   ├── appsettings.json                  Complete config - 41 counters
+│   │   ├── appsettings.json                  Complete config - 39 counters
 │   │   └── appsettings.Development.json      Override to disable
 │   ├── web.config.example                    Legacy example (reference only)
 │   └── appsettings.json.example              Legacy example (reference only)
@@ -50,7 +51,7 @@ OptiDotNetCounters/
 
 ## Key Features
 
-✅ Multi-targeted: net472, net6.0, net8.0
+✅ Multi-targeted: net472, net6.0, net10.0
 ✅ Multi-version: Optimizely V11, V12, V13
 ✅ Comprehensive configurations with all critical metrics
 ✅ Auto-installation via NuGet content files
@@ -61,24 +62,28 @@ OptiDotNetCounters/
 
 ## Configuration Summary
 
-V11 (28 counters):
+Both templates are supersets of the built-in defaults, which are 23 counters on either
+version. Naming counters in configuration replaces the defaults rather than adding to
+them, so a template has to carry every default it wants kept.
+
+V11 template (34 counters):
 - ASP.NET request metrics (6)
-- ASP.NET cache performance (3)
+- ASP.NET cache performance (9)
 - CLR memory (9)
 - CLR threading (5)
 - Process health (4)
 - Exception tracking (1)
 
-V12/V13 (41 counters):
-- CPU & process (2)
-- Memory & GC (12)
-- Threading (5)
-- Application health (2)
-- JIT compilation (2)
-- ASP.NET Core requests (4)
-- Kestrel server (5)
-- HTTP client (7)
-- Additional runtime (2)
+V12/V13 template (39 counters):
+- System.Runtime (23)
+  - CPU & process (2)
+  - Memory & GC (12)
+  - Threading (5)
+  - Application health (2)
+  - JIT compilation (2)
+- Microsoft.AspNetCore.Hosting - requests (4)
+- Microsoft.AspNetCore.Server.Kestrel (5)
+- System.Net.Http - outbound calls (7)
 
 ## Documentation Files (11 total)
 
@@ -101,12 +106,16 @@ Optimizely.Performance.DotNetCounters.1.0.0.nupkg
 ├── lib/
 │   ├── net472/Optimizely.Performance.DotNetCounters.dll
 │   ├── net6.0/Optimizely.Performance.DotNetCounters.dll
-│   └── net8.0/Optimizely.Performance.DotNetCounters.dll
-├── content/App_Data/Optimizely.PerformanceCounters/
-│   ├── V11/ (2 files)
-│   ├── V12-V13/ (2 files)
-│   ├── CONFIGURATION_PRESETS_GUIDE.md
-│   └── README_AFTER_INSTALL.md
+│   └── net10.0/Optimizely.Performance.DotNetCounters.dll
+├── content/
+│   ├── Optimizely.PerformanceCounters.config   (project root - web.config
+│   │                                            references it by configSource,
+│   │                                            which resolves from the site root)
+│   └── App_Data/Optimizely.PerformanceCounters/
+│       ├── V11/ (2 files - transform and web.config snippet)
+│       ├── V12-V13/ (2 files)
+│       ├── CONFIGURATION_PRESETS_GUIDE.md
+│       └── README_AFTER_INSTALL.md
 ├── contentFiles/any/any/App_Data/... (mirrors content/)
 ├── build/Optimizely.Performance.DotNetCounters.targets
 ├── tools/install.ps1
@@ -125,8 +134,8 @@ Optimizely.Performance.DotNetCounters.1.0.0.nupkg
 
 ## Statistics
 
-- Source code files: 7 (.cs)
-- Configuration templates: 4 (2 per version)
+- Source code files: 6 (.cs)
+- Configuration templates: 5 (3 for V11, 2 for V12/V13)
 - Legacy examples: 2 (reference only)
 - Documentation files: 11 (.md)
 - Build integration files: 2

@@ -6,7 +6,9 @@ This document explains how to build the Optimizely Performance Counters library 
 
 ### Required Software
 
-- .NET SDK 6.0 or later (for building .NET 6 and .NET 8 targets)
+- .NET SDK 10.0 (builds every .NET target; the older reference assemblies come down
+  as NuGet packages, so no earlier SDK is needed to *build*)
+- .NET runtimes 6.0, 7.0, 8.0 and 9.0, if you want to *run* the tests on those targets
 - .NET Framework 4.7.2 Developer Pack (for building .NET Framework target)
 - Visual Studio 2022 or later (recommended) OR JetBrains Rider
 - Git (for version control)
@@ -36,13 +38,13 @@ The project requires access to the Optimizely NuGet feed. A `nuget.config` file 
 # Restore NuGet packages
 dotnet restore
 
-# Build all targets (net472, net6.0, net8.0)
+# Build all targets (net472, net6.0, net7.0, net8.0, net9.0, net10.0)
 dotnet build --configuration Release
 
 # Build a specific target framework
 dotnet build --configuration Release --framework net472
 dotnet build --configuration Release --framework net6.0
-dotnet build --configuration Release --framework net8.0
+dotnet build --configuration Release --framework net10.0
 ```
 
 ### Visual Studio Build
@@ -116,8 +118,7 @@ The conflicts are expected and safe because we're building against multiple fram
 
 **Solution**:
 1. Install .NET Framework 4.7.2 Developer Pack from https://dotnet.microsoft.com/download/dotnet-framework
-2. Install .NET 6 SDK from https://dotnet.microsoft.com/download/dotnet/6.0
-3. Install .NET 8 SDK from https://dotnet.microsoft.com/download/dotnet/8.0
+2. Install the .NET 10 SDK from https://dotnet.microsoft.com/download/dotnet/10.0
 
 ## Creating a NuGet Package
 
@@ -127,10 +128,13 @@ To create a distributable NuGet package:
 # Pack all targets into a single NuGet package
 dotnet pack --configuration Release --output ./nupkg
 
-# The resulting package will contain all three target frameworks:
+# The resulting package will contain all six target frameworks:
 # - lib/net472/Optimizely.Performance.DotNetCounters.dll
 # - lib/net6.0/Optimizely.Performance.DotNetCounters.dll
+# - lib/net7.0/Optimizely.Performance.DotNetCounters.dll
 # - lib/net8.0/Optimizely.Performance.DotNetCounters.dll
+# - lib/net9.0/Optimizely.Performance.DotNetCounters.dll
+# - lib/net10.0/Optimizely.Performance.DotNetCounters.dll
 ```
 
 The NuGet package will automatically select the correct DLL based on the consuming project's target framework.
@@ -141,9 +145,18 @@ The NuGet package will automatically select the correct DLL based on the consumi
 |-----------------|--------------|-------------------|--------|
 | `net472` | .NET Framework 4.7.2 | V11 | Supported |
 | `net6.0` | .NET 6 | V12 | Supported |
-| `net8.0` | .NET 8 | V13 | Supported |
+| `net7.0` | .NET 7 | V12 | Supported; runtime is out of support upstream |
+| `net8.0` | .NET 8 | V12 | Supported |
+| `net9.0` | .NET 9 | V12 | Supported; runtime is out of support upstream |
+| `net10.0` | .NET 10 | V13 | Supported |
 
-**Note**: .NET 9 and .NET 10 support can be added by extending the `<TargetFrameworks>` property, but as of this writing, Optimizely V13 officially supports .NET 8.
+CMS 12 spans .NET 6 through 9 and CMS 13 is .NET 10, which is why the EPiServer floor
+changes at `net10.0` and nowhere else.
+
+.NET 7 and .NET 9 are past their upstream support dates. They are still built because
+a site that never moved off them is exactly the site most in need of counters, and the
+cost of keeping them is one row in a version table - no source in this project is
+conditional on them.
 
 ## Conditional Compilation
 
@@ -158,16 +171,12 @@ The project uses `#if` directives to compile different code for different target
     // .NET Core and later code (Event Counters)
 #endif
 
-#if NET6_0
-    // .NET 6 specific code
-#endif
-
-#if NET8_0
-    // .NET 8 specific code
-#endif
 ```
 
-This allows a single codebase to support all platforms while only including relevant code in each build.
+That is the whole of it. There is deliberately no `NET6_0`, `NET8_0` or `NET10_0` in the
+source: anything that needs to vary by runtime - the framework name in the startup log,
+for instance - is read at run time instead. Adding a target framework is therefore a
+`.csproj` edit and nothing more.
 
 ## Continuous Integration
 

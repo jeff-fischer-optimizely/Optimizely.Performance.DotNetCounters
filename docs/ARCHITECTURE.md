@@ -60,30 +60,36 @@ This document provides visual representations of the Optimizely.Performance.DotN
 ## Multi-Targeting Flow
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                Single .csproj File                                │
-│  <TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>      │
-└─────────────┬───────────────┬──────────────┬─────────────────────┘
-              │               │              │
-              ▼               ▼              ▼
-   ┌──────────────┐ ┌─────────────┐ ┌──────────────┐
-   │  net472      │ │   net6.0    │ │   net8.0     │
-   │              │ │             │ │              │
-   │ EPiServer    │ │ EPiServer   │ │ EPiServer    │
-   │ CMS Core 11  │ │ CMS Core 12 │ │ Cms Core 13  │
-   │              │ │             │ │              │
-   │ AI Perf      │ │ AI AspNet   │ │ AI AspNet    │
-   │ Counter      │ │ Core        │ │ Core         │
-   │ Collector    │ │             │ │              │
-   └──────┬───────┘ └──────┬──────┘ └──────┬───────┘
-          │                │               │
-          ▼                ▼               ▼
-   ┌──────────────┐ ┌─────────────┐ ┌──────────────┐
-   │ Windows      │ │ Event       │ │ Event        │
-   │ Performance  │ │ Counters    │ │ Counters     │
-   │ Counters     │ │             │ │              │
-   └──────────────┘ └─────────────┘ └──────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│                          Single .csproj File                                │
+│  <TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0;net10.0</...>        │
+└─────────────┬──────────────────────────┬───────────────────┬───────────────┘
+              │                          │                   │
+              ▼                          ▼                   ▼
+   ┌──────────────────┐  ┌─────────────────────────┐  ┌──────────────────┐
+   │      net472      │  │ net6.0 net7.0           │  │     net10.0      │
+   │                  │  │ net8.0 net9.0           │  │                  │
+   │  EPiServer       │  │  EPiServer              │  │  EPiServer       │
+   │  CMS Core 11     │  │  CMS Core 12            │  │  CMS Core 13     │
+   │                  │  │                         │  │                  │
+   │  AI Perf         │  │  AI AspNetCore          │  │  AI AspNetCore   │
+   │  Counter         │  │                         │  │                  │
+   │  Collector       │  │  Extensions major       │  │  Extensions      │
+   │                  │  │  matches the runtime    │  │  10.0.0          │
+   └────────┬─────────┘  └────────────┬────────────┘  └────────┬─────────┘
+            │                         │                        │
+            ▼                         ▼                        ▼
+   ┌──────────────────┐  ┌─────────────────────────┐  ┌──────────────────┐
+   │  Windows         │  │  Event Counters         │  │  Event Counters  │
+   │  Performance     │  │                         │  │                  │
+   │  Counters        │  │                         │  │                  │
+   └──────────────────┘  └─────────────────────────┘  └──────────────────┘
 ```
+
+The four middle targets compile identical source and differ only in the package versions
+they resolve. They exist so that a site on .NET 9 gets .NET 9 era `Microsoft.Extensions`
+assemblies rather than the .NET 6 ones a single `net6.0` asset would have carried in
+behind it.
 
 ## Configuration Flow
 
@@ -270,16 +276,19 @@ Source Code (.cs files)
 
                     ▼ Compile Time
 
-┌─────────────┬─────────────┬─────────────┐
-│   net472    │   net6.0    │   net8.0    │
-│    .dll     │    .dll     │    .dll     │
-├─────────────┼─────────────┼─────────────┤
-│ Windows     │ Event       │ Event       │
-│ Perf Ctrs   │ Counters    │ Counters    │
-│             │             │             │
-│ 100 KB      │ 85 KB       │ 85 KB       │
-└─────────────┴─────────────┴─────────────┘
+┌─────────────┬──────────────────────────────────────────┬─────────────┐
+│   net472    │  net6.0   net7.0   net8.0   net9.0       │   net10.0   │
+│    .dll     │   .dll     .dll     .dll     .dll        │    .dll     │
+├─────────────┼──────────────────────────────────────────┼─────────────┤
+│ Windows     │ Event Counters                           │ Event       │
+│ Perf Ctrs   │ (identical source; only the resolved     │ Counters    │
+│             │  package versions differ)                │             │
+└─────────────┴──────────────────────────────────────────┴─────────────┘
 ```
+
+The `#if` split is only ever `NET472` against everything else. No target-specific
+symbol appears anywhere in the source, which is what lets a framework be added to the
+list without touching a single `.cs` file.
 
 ## Class Diagram
 

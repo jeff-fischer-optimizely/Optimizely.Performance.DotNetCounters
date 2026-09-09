@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Features
-- Multi-targeted assembly supporting .NET Framework 4.7.2, .NET 6, and .NET 8
+- Multi-targeted assembly supporting .NET Framework 4.7.2 and .NET 6 through .NET 10
 - Support for Optimizely CMS V11, V12, and V13
 - Automatic initialization via `IConfigurableModule`
 - Application Insights integration for metric collection
@@ -70,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Package Information
 - **Package ID**: Optimizely.Performance.DotNetCounters
 - **License**: Apache-2.0
-- **Target Frameworks**: net472, net6.0, net8.0
+- **Target Frameworks**: net472, net6.0, net7.0, net8.0, net9.0, net10.0
 - **Dependencies**: Microsoft.ApplicationInsights, Optimizely packages
 
 ---

@@ -5,7 +5,7 @@ This document provides a complete overview of the Optimizely.Performance.DotNetC
 ## Project Overview
 
 **Namespace**: `Optimizely.Performance.DotNetCounters`  
-**Target Platforms**: .NET Framework 4.7.2, .NET 6, .NET 8  
+**Target Platforms**: .NET Framework 4.7.2, .NET 6, 7, 8, 9 and 10  
 **Optimizely Versions**: V11, V12, V13  
 **License**: Apache-2.0
 
@@ -149,16 +149,23 @@ Supports both legacy (`web.config`) and modern (`appsettings.json`) configuratio
 
 **Target Frameworks**:
 ```xml
-<TargetFrameworks>net472;net6.0;net8.0</TargetFrameworks>
+<TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
 **Framework-Specific Package References**:
 
 | Framework | Optimizely Version | AI Package | Notes |
 |-----------|-------------------|------------|-------|
-| net472 | EPiServer.CMS.Core 11.* | Microsoft.ApplicationInsights.PerfCounterCollector | Windows only |
-| net6.0 | EPiServer.CMS.Core 12.* | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
-| net8.0 | EPiServer.Cms.Core 13.* | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+| net472 | EPiServer.CMS.Core 11.1.0 | Microsoft.ApplicationInsights.PerfCounterCollector | Windows only |
+| net6.0 | EPiServer.CMS.Core 12.10.0 | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+| net7.0 | EPiServer.CMS.Core 12.10.0 | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+| net8.0 | EPiServer.CMS.Core 12.10.0 | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+| net9.0 | EPiServer.CMS.Core 12.10.0 | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+| net10.0 | EPiServer.CMS.Core 13.0.0 | Microsoft.ApplicationInsights.AspNetCore | Cross-platform |
+
+Every version above is a floor rather than a pin - the oldest CMS that runs on that
+framework - so a site keeps its own newer packages through NuGet unification. The
+`Microsoft.Extensions.*` floors follow the framework's own major for the same reason.
 
 ### Initialization Flow
 

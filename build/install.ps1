@@ -4,7 +4,9 @@ param($installPath, $toolsPath, $package, $project)
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " Optimizely Performance Counters" -ForegroundColor Cyan
-Write-Host " Version: 1.0.0" -ForegroundColor Cyan
+# Read from the package rather than written in, which is how this line came to say 1.0.0
+# for every version that followed it.
+Write-Host " Version: $($package.Version)" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "✅ Installation complete!" -ForegroundColor Green
@@ -28,7 +30,7 @@ if ($isNetFramework) {
     Write-Host "📋 .NET Framework Project Detected (Optimizely V11)" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "Configuration files added to your project:" -ForegroundColor White
-    Write-Host "  ✅ Optimizely.PerformanceCounters.config (28 counters)" -ForegroundColor Green
+    Write-Host "  ✅ Optimizely.PerformanceCounters.config (34 counters)" -ForegroundColor Green
     Write-Host "  📄 App_Data/Optimizely.PerformanceCounters/ (documentation)" -ForegroundColor Gray
     Write-Host ""
 
@@ -77,7 +79,7 @@ else {
     Write-Host ""
     Write-Host "Configuration files added:" -ForegroundColor White
     Write-Host "  📄 App_Data/Optimizely.PerformanceCounters/V12-V13/" -ForegroundColor Gray
-    Write-Host "     - appsettings.json (41 counters)" -ForegroundColor Green
+    Write-Host "     - appsettings.json (39 counters)" -ForegroundColor Green
     Write-Host "     - appsettings.Development.json (disable override)" -ForegroundColor Green
     Write-Host ""
     Write-Host "⚙️  SETUP REQUIRED:" -ForegroundColor Yellow
@@ -92,13 +94,16 @@ else {
 }
 
 Write-Host "What Gets Monitored:" -ForegroundColor Yellow
+# These totals describe the configuration templates this package just added to the project,
+# not the built-in defaults, which are a smaller curated set of 23 either way. The two numbers
+# are different on purpose and both are correct; say which one is meant.
 if ($isNetFramework) {
     Write-Host "  • ASP.NET request metrics (queue, throughput, timing)" -ForegroundColor White
     Write-Host "  • CLR memory (heap, GC, all generations)" -ForegroundColor White
     Write-Host "  • CLR threading (threads, contention, locks)" -ForegroundColor White
     Write-Host "  • Process health (CPU, memory, handles)" -ForegroundColor White
     Write-Host "  • Cache performance" -ForegroundColor White
-    Write-Host "  Total: 28 performance counters" -ForegroundColor Green
+    Write-Host "  Total: 34 performance counters in the template (23 if you use the defaults)" -ForegroundColor Green
 }
 else {
     Write-Host "  • CPU, memory, GC metrics" -ForegroundColor White
@@ -106,7 +111,7 @@ else {
     Write-Host "  • ASP.NET Core requests" -ForegroundColor White
     Write-Host "  • Kestrel server metrics" -ForegroundColor White
     Write-Host "  • HTTP client (outbound)" -ForegroundColor White
-    Write-Host "  Total: 41 event counters" -ForegroundColor Green
+    Write-Host "  Total: 39 event counters in the template (23 if you use the defaults)" -ForegroundColor Green
 }
 Write-Host ""
 

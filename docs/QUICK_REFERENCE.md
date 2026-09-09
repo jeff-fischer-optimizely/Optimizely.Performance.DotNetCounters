@@ -50,13 +50,19 @@ Add to `appsettings.json`:
 
 ## What Gets Collected
 
-### .NET Framework (16 counters)
+These are the built-in defaults - what a site collects when it names no counters of its
+own. The shipped configuration templates are supersets of them: 34 on V11 and 39 on
+V12/V13. Naming any counter in configuration *replaces* the defaults rather than adding
+to them.
+
+### .NET Framework (23 counters)
 - ASP.NET request queue, throughput, timing
+- ASP.NET cache entries, hit rate and memory-pressure trims
 - CLR memory (heap, GC, generations)
 - CLR threading (threads, contention)
 - Process metrics
 
-### .NET 6+ (22 counters)
+### .NET 6+ (23 counters)
 - CPU, memory, GC metrics
 - Thread pool statistics
 - Request throughput and failures

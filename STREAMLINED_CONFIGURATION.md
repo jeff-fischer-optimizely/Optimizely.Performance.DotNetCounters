@@ -39,7 +39,7 @@ Clean, maintainable, updateable
 ### V11 (.NET Framework 4.7.2)
 
 **In Project Root** (automatically added by NuGet):
-- `Optimizely.PerformanceCounters.config` - **Main configuration file** with all 28 counters
+- `Optimizely.PerformanceCounters.config` - **Main configuration file** with all 34 counters
 
 **In App_Data/Optimizely.PerformanceCounters/V11/** (reference/docs):
 - `web.config.snippet.xml` - Copy-paste reference for web.config setup
@@ -48,7 +48,7 @@ Clean, maintainable, updateable
 ### V12/V13 (.NET 6+)
 
 **In App_Data/Optimizely.PerformanceCounters/V12-V13/**:
-- `appsettings.json` - Complete configuration with all 41 counters
+- `appsettings.json` - Complete configuration with all 39 counters
 - `appsettings.Development.json` - Override to disable in development
 
 ## User Experience
@@ -173,7 +173,7 @@ YourProject/
 </configuration>
 ```
 
-**That's it!** All 28 counter definitions live in the external file.
+**That's it!** All 34 counter definitions live in the external file.
 
 ## NuGet Package Structure
 
@@ -224,7 +224,7 @@ The PowerShell install script now:
 📋 .NET Framework Project Detected (Optimizely V11)
 
 Configuration files added to your project:
-  ✅ Optimizely.PerformanceCounters.config (28 counters)
+  ✅ Optimizely.PerformanceCounters.config (34 counters)
   📄 App_Data/Optimizely.PerformanceCounters/ (documentation)
 
 ⚙️  SETUP REQUIRED:
@@ -255,7 +255,7 @@ What Gets Monitored:
   • CLR threading (threads, contention, locks)
   • Process health (CPU, memory, handles)
   • Cache performance
-  Total: 28 performance counters
+  Total: 34 performance counters in the template (23 if you use the defaults)
 
 Documentation:
   📄 App_Data/Optimizely.PerformanceCounters/README_AFTER_INSTALL.md

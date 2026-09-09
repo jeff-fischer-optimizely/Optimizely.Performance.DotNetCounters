@@ -7,7 +7,7 @@ Thank you for installing **Optimizely.Performance.DotNetCounters**!
 ### For Optimizely V11 (.NET Framework 4.7.2)
 
 **In your project root:**
-- ✅ `Optimizely.PerformanceCounters.config` - **Main configuration file** (28 counters)
+- ✅ `Optimizely.PerformanceCounters.config` - **Main configuration file** (34 counters)
 
 **In App_Data/Optimizely.PerformanceCounters/V11/:**
 - 📄 `web.config.snippet.xml` - Lines to add to your web.config
@@ -16,7 +16,7 @@ Thank you for installing **Optimizely.Performance.DotNetCounters**!
 ### For Optimizely V12/V13 (.NET 6+)
 
 **In App_Data/Optimizely.PerformanceCounters/V12-V13/:**
-- 📄 `appsettings.json` - Complete configuration (41 counters)
+- 📄 `appsettings.json` - Complete configuration (39 counters)
 - 📄 `appsettings.Development.json` - Override to disable in development
 
 **In App_Data/Optimizely.PerformanceCounters/:**
@@ -66,7 +66,7 @@ Add this anywhere inside `<configuration>`:
 **That's it!** 
 
 ✅ The library auto-initializes on startup  
-✅ Collects 28 performance counters every 60 seconds  
+✅ Collects 34 performance counters every 60 seconds  
 ✅ Sends metrics to Application Insights
 
 **💡 Optional: Disable in Development**
@@ -117,14 +117,14 @@ Copy `appsettings.Development.json` to your project root:
 **That's it!**
 
 ✅ Auto-initializes on startup  
-✅ Collects 41 event counters every 60 seconds  
+✅ Collects 39 event counters every 60 seconds  
 ✅ Sends metrics to Application Insights
 
 ---
 
 ## What Gets Monitored
 
-### V11 (.NET Framework) - 28 Counters
+### V11 (.NET Framework) - 34 Counters
 
 - **ASP.NET** (6): Request queue, throughput, timing, failures
 - **Cache** (3): Cache entries, hits, misses
@@ -133,7 +133,7 @@ Copy `appsettings.Development.json` to your project root:
 - **Process** (4): CPU, memory, threads, handles
 - **Exceptions** (1): Exception rate
 
-### V12/V13 (.NET 6+) - 41 Counters
+### V12/V13 (.NET 6+) - 39 Counters
 
 - **Process** (2): CPU usage, working set
 - **Memory & GC** (12): All generations, LOH, POH, fragmentation

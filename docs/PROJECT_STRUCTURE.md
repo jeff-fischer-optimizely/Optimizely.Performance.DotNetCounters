@@ -30,7 +30,7 @@ OptiDotNetCounters/
 The project uses a single `.csproj` file with multi-targeting to support all platforms:
 
 ```xml
-<TargetFrameworks>net472;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+<TargetFrameworks>net472;net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
 ```
 
 ### Conditional Compilation
@@ -82,7 +82,7 @@ This approach ensures:
 
 ## Version Matrix
 
-| Component | .NET Framework 4.7.2 | .NET 6 | .NET 8/9/10 |
+| Component | .NET Framework 4.7.2 | .NET 6 / 7 / 8 / 9 | .NET 10 |
 |-----------|---------------------|---------|-------------|
 | **Optimizely Version** | V11 | V12 | V13 |
 | **Counter Type** | Windows Performance Counters | Event Counters | Event Counters |
@@ -108,7 +108,7 @@ To build a specific target:
 ```bash
 dotnet build -f net472
 dotnet build -f net6.0
-dotnet build -f net8.0
+dotnet build -f net10.0
 ```
 
 ## Package References
